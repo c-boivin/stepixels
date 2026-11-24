@@ -1,56 +1,39 @@
-# Welcome to your Expo app 👋
+# stepixels
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native app built for the ECV M2 mobile course, by a team of two.
 
-## Get started
+| Stack | Version |
+| --- | --- |
+| [Expo](https://docs.expo.dev/versions/v58.0.0/) (React Native) | SDK 58 (React Native 0.88, React 19) |
+| [Expo Router](https://docs.expo.dev/router/introduction) | every file in `src/app` is a route |
+| TypeScript | strict mode |
 
-1. Install dependencies
+## Documentation
 
-   ```bash
-   npm install
-   ```
+- [`docs/adr`](docs/adr): architecture decisions and why we made them.
+- [`docs/conventions.md`](docs/conventions.md): code conventions, used in code reviews.
+- [`docs/course.md`](docs/course.md): course requirements and technical guidance.
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Setup
 
 ```bash
-npm run reset-project
+pnpm install   # also installs the commit-msg hook (commitlint)
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Then install [Expo Go](https://expo.dev/go) on your phone.
 
-### Other setup steps
+## Commands
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+pnpm start                 # Metro dev server: scan the QR code with Expo Go
+pnpm ios | android | web   # start and open on a platform
+pnpm lint                  # lint
+pnpm exec tsc --noEmit     # typecheck
+```
 
-## Learn more
+Add a dependency with `pnpm exec expo install <package>`: it picks the version compatible with SDK 58.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Contributing
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- One branch per change, then a pull request reviewed by the other team member. The branch is deleted once merged.
+- Commit messages and pull request titles follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope): description`.
