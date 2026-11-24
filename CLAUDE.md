@@ -66,7 +66,7 @@ Expo ships breaking changes with every SDK. APIs from older SDKs are often renam
 ```bash
 pnpm exec tsc --noEmit   # must pass
 pnpm lint                # must pass
-pnpm exec expo-doctor    # after adding or updating a dependency
+pnpm exec expo install --check   # after adding or updating a dependency (behind a proxy: set EXPO_OFFLINE=1 first)
 ```
 
 Then test on a phone with Expo Go (`pnpm start`). Report what was checked and what was not.
