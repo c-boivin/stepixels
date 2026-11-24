@@ -1,6 +1,6 @@
 # ADR-XXX · <Title, as a question or a decision>
 
-- **Status**: Proposed | Accepted | Superseded by ADR-XXX
+- **Status**: Accepted | Superseded by ADR-XXX
 - **Date**: YYYY-MM-DD
 - **Authors**: <names>
 

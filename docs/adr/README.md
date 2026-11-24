@@ -13,11 +13,11 @@ We use them to justify our choices during the final presentation.
 - One file per decision: `ADR-<3-digit number>-<short-title>.md`.
 - Start from [`TEMPLATE.md`](TEMPLATE.md).
 - An accepted ADR is never edited. If we change our mind, we write a new ADR that **supersedes** the old one, and we set the old one's status to "Superseded by ADR-XXX".
-- Every ADR goes through a pull request reviewed by the other team member.
+- Every ADR goes through a pull request reviewed by the other team member. **The pull request is the proposal: approving it accepts the ADR.** So an ADR is written with the status `Accepted` from the start, and every ADR on `main` is accepted.
 
 ## List
 
 | # | Decision | Status |
 |---|---|---|
 | [ADR-001](ADR-001-why-react-native.md) | Why React Native? | Accepted |
-| [ADR-002](ADR-002-app-architecture.md) | How do we structure the app? | Proposed |
+| [ADR-002](ADR-002-app-architecture.md) | How do we structure the app? | Accepted |

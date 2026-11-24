@@ -1,6 +1,6 @@
 # ADR-002 · How do we structure the app?
 
-- **Status**: Proposed
+- **Status**: Accepted
 - **Date**: 2026-11-24
 - **Authors**: stepixels team
 
