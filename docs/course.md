@@ -5,7 +5,7 @@ The slides are the reference: if this summary and the slides disagree, the slide
 For our own decisions, see `docs/adr/`. For code conventions, see `docs/conventions.md`.
 
 - [Part 1 — Project brief](#part-1--project-brief): requirements, schedule, grading, presentation.
-- [Part 2 — Technical guide](#part-2--technical-guide): React, React Native, navigation, HTTP, architecture.
+- [Part 2 — Technical guide](#part-2--technical-guide): React, React Native, navigation, HTTP, architecture, persistence, security, offline mode.
 
 ## Part 1 — Project brief
 
@@ -78,12 +78,12 @@ One ADR per important decision: context and constraints, decision and alternativ
 ### Teacher's references
 
 - Example repository: https://github.com/bastienrobert/ticketing (monorepo: `apps/mobile` is the Expo app, `apps/server` the events API, `docs/adr/` the ADRs). The teacher updates it during the week; see "Teacher's example repository" in `CLAUDE.md`.
-  - **Last reviewed commit**: `7b08381` (2026-11-17, "feat(mobile): data refreshing using pull-to-refresh gesture").
+  - **Last reviewed commit**: `4356dca` (2026-11-18, "feat(mobile): add favorites persistence in local db").
 - Exercise 1 correction (React web catalogue) and exercise 2 correction (React Native carousel): source of `docs/conventions.md`.
 
 ### Not yet covered
 
-Slides 63–94 (storage, security, offline, native APIs, permissions, sensors, tests, quality, distribution) are not summarized yet. Add them here when the course is given.
+Slides 73–94 (native APIs, permissions, sensors, tests, quality, distribution, final delivery) are not summarized yet. Add them here when the course is given.
 
 ## Part 2 — Technical guide
 
@@ -200,3 +200,100 @@ export async function getEvents(signal: AbortSignal) {
 | Hooks (when needed) | `hooks/` | Reused logic |
 
 Dependencies go in **one direction only**. Our detailed version: `docs/adr/ADR-002-app-architecture.md`.
+
+### Persistence: which storage for which data? [63–64]
+
+| Storage | For | Examples |
+|---|---|---|
+| React state | The interface in progress, in memory | Search text, open sheet |
+| AsyncStorage | Preferences, keys and values | Chosen theme, onboarding seen |
+| SQLite | Local tables, SQL queries | Favorites, cached catalogue |
+| SecureStore | Small secrets | Session token |
+| FileSystem | Files and media, documents or cache | Photos, downloaded files |
+
+### SQLite with expo-sqlite [65–66]
+
+- A persistent database on the device, with an explicit schema, created at app launch:
+
+```ts
+const database = await openDatabaseAsync('app.db')
+
+await database.execAsync(`
+  CREATE TABLE IF NOT EXISTS favorites (
+    event_id INTEGER PRIMARY KEY
+  )
+`)
+```
+
+- Write then read back: insert without duplicates (`INSERT OR IGNORE`), read at startup, and **always pass values as parameters** (`?`), never inside the SQL string.
+
+```ts
+await database.runAsync(
+  `INSERT OR IGNORE INTO favorites (event_id) VALUES (?)`,
+  event.id,
+)
+
+const favorites = await database.getAllAsync<FavoriteRaw>(
+  'SELECT event_id FROM favorites',
+)
+```
+
+### SQLite with Drizzle ORM [67]
+
+- Schema written in TypeScript, migrations applied at startup, reactive queries.
+
+```tsx
+const expo = openDatabaseSync('app.db', { enableChangeListener: true })
+const db = drizzle(expo)
+
+export default function App() {
+  const migration = useMigrations(db, migrations)
+  if (migration.error) return <ErrorScreen />
+  if (!migration.success) return <Loading />
+  return <Favorites />
+}
+
+function Favorites() {
+  const { data } = useLiveQuery(db.select().from(favorites))
+  return <FavoritesList items={data} />
+}
+```
+
+### Data and security [68–69]
+
+The phone keeps a copy of the data:
+
+- **Visible bundle**: `EXPO_PUBLIC_` variables are readable in the app. Private keys stay on the server.
+- **HTTPS**: valid certificate; the server checks authorization.
+- **Minimal collection**: only the permissions we need; a defined retention time.
+- **Sensitive data**: no secrets in logs; purge local data on sign-out.
+- **Local storage**: SQLite and AsyncStorage are **not encrypted** by default. Use **SecureStore** (`expo-secure-store`) for secrets:
+
+```ts
+await SecureStore.setItemAsync('session-token', sessionToken)
+const storedToken = await SecureStore.getItemAsync('session-token')
+await SecureStore.deleteItemAsync('session-token')
+```
+
+### Offline mode [70–72]
+
+The offline catalogue, in 3 steps:
+
+1. **Read the cache**: the last copy, on the device.
+2. **Display**: the data is visible, with the date of the copy.
+3. **Refresh**: call the API if it is reachable, then save the new cache.
+
+No network: keep the copy. No cache: a message and a **Retry** action.
+
+Persistence in the cloud (writes made offline):
+
+| Device | Server |
+|---|---|
+| The action is **pending**, in a persistent queue | The action is **accepted or refused** |
+| Retried when the connection comes back | Business confirmation; conflicts handled explicitly |
+
+Network, resume and retries:
+
+- **Network**: `expo-network` gives a signal, but only the request proves the API is reachable.
+- **AppState**: when the app becomes `active` again, revalidate the data; background work is limited.
+- **Requests**: retries are limited and spaced out; clean up (cancel requests, remove listeners).

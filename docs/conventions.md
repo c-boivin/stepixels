@@ -6,7 +6,9 @@ They follow the teacher's example repository ([`bastienrobert/ticketing`](https:
 
 ## Folders
 
-See `docs/adr/ADR-002-app-architecture.md` for the full structure and the dependency rules. Where does new code go?
+See `docs/adr/ADR-002-app-architecture.md` for the frame and the dependency rules. This table is the up-to-date list: it follows the teacher's example repository as it evolves. Where does new code go?
+
+Create a folder or file only when a feature needs it (see `CLAUDE.md`).
 
 | The code is… | Folder |
 |---|---|
@@ -16,7 +18,9 @@ See `docs/adr/ADR-002-app-architecture.md` for the full structure and the depend
 | state shared between screens | `src/contexts/<Name>Context.tsx` |
 | reusable React logic | `src/hooks/use<Name>.ts` |
 | loading and adapting a page's data | `src/data/get-<page>-page.ts` + `src/data/adapters/` |
-| pure TypeScript (API client, i18n, business rules) | `src/lib/` |
+| access to one resource, wherever it is stored (API, local database or both) | `src/repositories/<resource>.repository.ts` |
+| local database: Drizzle schema and generated migrations | `src/db/schema.ts` + `src/db/migrations/` |
+| pure TypeScript and clients (API client, database client, i18n, business rules) | `src/lib/` (`api.ts`, `db.ts`, `i18n.ts`…) |
 | colors (light and dark palettes, `useColors()`) | `src/styles/theme.ts` |
 
 ## One component = one folder
@@ -85,18 +89,41 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 
 ## Data
 
-- `lib/api.ts` exports one `fetchApi(path, signal)`: it calls `${API_URL}${path}`, throws on a non-`ok` status and returns the payload as `unknown`.
-- `API_URL` comes from `EXPO_PUBLIC_API_URL` (`src/const.ts`). `.env.example` is committed; `.env` is not.
-- A getter `get-<page>-page.ts` takes an `AbortSignal`, calls `fetchApi`, **checks the payload** (`Array.isArray`, item found…) and returns the page data, or `null` when the payload is unusable or the item does not exist.
+```
+route ──► data/get-<page>-page.ts ──► repositories/<resource>.repository.ts ──► lib/api.ts (API)
+               │ (adapter)               ▲                                 └──► lib/db.ts (local database)
+               ▼                         │
+          page data              contexts (shared state, e.g. favorites)
+```
+
+- `lib/api.ts` exports one `fetchApi(path, init?)`: it calls `${API_URL}${path}` with the `RequestInit` (`signal`, `method`…), throws an **`ApiError`** (with its HTTP `status`) on a non-`ok` response, returns `null` for a `204`, and otherwise the payload as `unknown`.
+- `API_URL` comes from `EXPO_PUBLIC_API_URL` (`src/const.ts`). `.env.example` is committed; `.env` is not. Everything in `EXPO_PUBLIC_` is readable in the app: never put a secret there.
+- A **repository** (`<resource>Repository`, an object of functions) is the only code that knows where a resource is stored: it calls `fetchApi` and/or the local database. Getters and contexts call repositories, never `fetchApi` or the database directly.
+- A getter `get-<page>-page.ts` calls a repository, **checks the payload** (`Array.isArray`, item found…) and returns the page data, or `null` when the payload is unusable or the item does not exist. A getter that reads the network takes an `AbortSignal`.
 - **The adapter prepares everything for display**: date and price formatting (`Intl.DateTimeFormat` / `Intl.NumberFormat`, `'fr-FR'`, `timeZone: 'Europe/Paris'`, formatters created once as constants), defaults for `null` fields, labels. Views and components do no formatting.
-- Never call `fetch` outside `lib/api.ts`, and never load data outside a route.
+- Never call `fetch` outside `lib/api.ts`, and never load data outside a route (or a context, for shared state).
+
+## Local storage
+
+The storage choice is still open: it will be an ADR. These rules apply to whichever storage we choose (course slides 64–69).
+
+- One storage per kind of data: React state for the interface, AsyncStorage for small preferences, SQLite for lists and records, **SecureStore for secrets** (tokens), FileSystem for files and media.
+- SQLite and AsyncStorage are **not encrypted**: never store a secret there.
+- With SQLite + Drizzle: the schema lives in `src/db/schema.ts`, migrations are generated (never written by hand) into `src/db/migrations/`, the client is created once in `lib/db.ts`, and the root layout applies the migrations at launch (`useMigrations`) before rendering the app.
+- SQL values always go through parameters (`?` or Drizzle), never inside the SQL string.
+- Clear the user's local data on sign-out.
+- No secrets in logs.
 
 ## Loading, empty and error states
 
 - Loading: a **skeleton** that mirrors the real content (`Skeleton`, `XLoading` components), marked `accessible` with `accessibilityState={{ busy: true }}` and a loading label.
-- Error: the route's `ErrorBoundary`, with a "Retry" button.
+- Error: the route's `ErrorBoundary`, with a "Retry" button. It tells the two cases apart: an `ApiError` means the server answered with an error; any other error means the network is unreachable, so it shows an "offline" message.
+- Offline: show the last local copy when there is one (with its date when useful), refresh from the API when it is reachable, then update the copy. No copy: a message and a "Retry" button (course slide 70).
+- Short notices that do not block the screen ("you are offline"): `ui/Toast`.
+- An action that changes server data (add a favorite…): **optimistic update**. The UI changes at once (`useOptimistic` in a transition), then the action is sent; on failure, an alert explains it and the state is read again from the source.
 - Empty and "no results": handled by the list (`ListEmptyComponent`), with a different message for each case (nothing at all, no favorite yet, no result for these filters) and an action when one is useful (reset filters, browse events).
 - Pull-to-refresh on lists: `refreshing` + `onRefresh` from `useRequest`.
+- When the app becomes active again, or a screen gets the focus (`useIsFocused`), revalidate the data that may have changed. Retries are limited and spaced out; listeners and requests are cleaned up.
 
 ## Texts (i18n)
 
@@ -117,7 +144,7 @@ The app has a light and a dark theme ("Themes" in `docs/specs.md`): **layout in 
 - `const STYLES = StyleSheet.create({...})` at the **bottom** of the file, with layout only: **no color in `STYLES`**.
 - Descriptive camelCase keys (`card`, `content`, `title`, `badge`). Shared state styles first: `pressed: { opacity: 0.75 }`.
 - Colors come from `const colors = useColors()` (`src/styles/theme.ts`) and are added in the JSX: `style={[STYLES.title, { color: colors.text }]}`. Same for color props: `<Icon color={colors.accent} />`, `placeholderTextColor={colors.muted}`.
-- Palette keys: `background`, `surface`, `text`, `muted`, `border`, `control`, `accent`. A new color is added to **both** `LIGHT` and `DARK`. Never a hard-coded color.
+- Palette keys: `background`, `surface`, `text`, `muted`, `border`, `control`, `accent`, `error`. A new color is added to **both** `LIGHT` and `DARK`. Never a hard-coded color.
 - Every text and every surface gets a color: a missing one stays black on a dark background. Check each screen in both themes on the phone.
 - Layout with `flex` and `gap` for lists and rows. Margins are fine for vertical spacing inside a text block (`marginTop` between a title and its description).
 - Screen content is centered with a maximum width: `width: '100%', maxWidth: 600, alignSelf: 'center'`.
