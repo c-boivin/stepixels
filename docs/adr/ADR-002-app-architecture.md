@@ -1,4 +1,4 @@
-# ADR-003 · How do we structure the app?
+# ADR-002 · How do we structure the app?
 
 - **Status**: Proposed
 - **Date**: 2026-11-24
@@ -47,7 +47,7 @@ src/
 ├── data/
 │   ├── get-<page>-page.ts      → load and adapt the data of one page
 │   ├── adapters/               → turn raw API data into display-ready data
-│   └── messages/fr.json        → app texts (ADR-004)
+│   └── messages/fr.json        → app texts (see `docs/specs.md`)
 ├── lib/                        → pure TypeScript: API client, i18n, business rules
 ├── styles/theme.ts             → colors
 └── const.ts                    → environment values (API URL)
