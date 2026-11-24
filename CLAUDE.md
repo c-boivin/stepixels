@@ -22,7 +22,7 @@ This file is shared by the team. If a rule here conflicts with a team member's r
 - **All documentation is in English**: docs, ADRs, README, code comments, commit messages, PR titles and descriptions.
 - **The app's screens are in French, through i18n** (`docs/specs.md`): never hard-code a user-facing text, including accessibility labels. Add it to `src/data/messages/fr.json` and use `i18n.t()`.
 - **Never invent a decision.** If something is not decided in an ADR, the specs or the conventions (data source, storage, hardware feature…), ask the user. Write a new ADR or spec only when the user asks for it.
-- **ADR or spec?** (teacher's rule) An ADR is only for a **major** technical choice, hard to undo, that shapes the whole project: framework, backend or database, app architecture. Write it when the choice is made (format: `docs/adr/TEMPLATE.md`), with status `Proposed`. Every other technical choice is a section of `docs/specs.md` (rule, why, rejected, limits). If unsure, ask.
+- **ADR or spec?** (teacher's rule) An ADR is only for a **major** technical choice, hard to undo, that shapes the whole project: framework, backend or database, app architecture. Write it when the choice is made (format: `docs/adr/TEMPLATE.md`), with status `Accepted`: approving its pull request is what accepts it, so never add a commit just to change the status. Every other technical choice is a section of `docs/specs.md` (rule, why, rejected, limits). If unsure, ask.
 - **Never edit an accepted ADR.** Write a new one that supersedes it (see `docs/adr/README.md`).
 - Keep the scope to the course requirements in `docs/course.md`. Propose extras, do not build them unasked.
 
