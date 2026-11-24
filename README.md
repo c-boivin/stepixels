@@ -10,7 +10,8 @@ React Native app built for the ECV M2 mobile course, by a team of two.
 
 ## Documentation
 
-- [`docs/adr`](docs/adr): architecture decisions and why we made them.
+- [`docs/adr`](docs/adr): major technical decisions and why we made them.
+- [`docs/specs.md`](docs/specs.md): other technical choices (commits, texts, themes).
 - [`docs/conventions.md`](docs/conventions.md): code conventions, used in code reviews.
 - [`docs/course.md`](docs/course.md): course requirements and technical guidance.
 

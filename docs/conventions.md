@@ -1,12 +1,12 @@
 # Code conventions
 
 Rules every team member follows, so the code looks like it was written by one person.
-They follow the teacher's example repository ([`bastienrobert/ticketing`](https://github.com/bastienrobert/ticketing), `apps/mobile`), within the frame of course slide 62 (see ADR-003).
+They follow the teacher's example repository ([`bastienrobert/ticketing`](https://github.com/bastienrobert/ticketing), `apps/mobile`), within the frame of course slide 62 (see ADR-002).
 **Read this before writing or reviewing code.** A pull request that breaks a rule gets a review comment pointing to the rule.
 
 ## Folders
 
-See `docs/adr/ADR-003-app-architecture.md` for the full structure and the dependency rules. Where does new code go?
+See `docs/adr/ADR-002-app-architecture.md` for the full structure and the dependency rules. Where does new code go?
 
 | The code is… | Folder |
 |---|---|
@@ -76,7 +76,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 
 ## State
 
-- **Route**: parameters and the data request. **View**: interaction state (search, filters). **Context**: state shared by several screens. See ADR-003.
+- **Route**: parameters and the data request. **View**: interaction state (search, filters). **Context**: state shared by several screens. See ADR-002.
 - `ui` components hold no business state: they receive props and call `onX` callbacks.
 - **Derived values are computed during render**, never stored in another state (the filtered list is computed from the query, the category and the events).
 - Update from the previous value with the function form: `setX((previous) => …)`.
@@ -100,7 +100,7 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 
 ## Texts (i18n)
 
-See ADR-004.
+See "Texts" in `docs/specs.md`.
 
 - **No hard-coded text in components.** Every text shown or read to the user (titles, buttons, messages, accessibility labels and hints) comes from `i18n.t('<key>')`.
 - Texts live in `src/data/messages/fr.json`, grouped by screen or feature (`catalogue`, `favorites`, `event`, `navigation`).
@@ -112,7 +112,7 @@ See ADR-004.
 
 ## Styles
 
-The app has a light and a dark theme (ADR-005): **layout in `STYLES`, colors in the JSX**.
+The app has a light and a dark theme ("Themes" in `docs/specs.md`): **layout in `STYLES`, colors in the JSX**.
 
 - `const STYLES = StyleSheet.create({...})` at the **bottom** of the file, with layout only: **no color in `STYLES`**.
 - Descriptive camelCase keys (`card`, `content`, `title`, `badge`). Shared state styles first: `pressed: { opacity: 0.75 }`.

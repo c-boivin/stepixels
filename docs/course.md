@@ -199,4 +199,4 @@ export async function getEvents(signal: AbortSignal) {
 | Business logic | `lib/` | Independent rules |
 | Hooks (when needed) | `hooks/` | Reused logic |
 
-Dependencies go in **one direction only**. Our detailed version: `docs/adr/ADR-003-app-architecture.md`.
+Dependencies go in **one direction only**. Our detailed version: `docs/adr/ADR-002-app-architecture.md`.
