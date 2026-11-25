@@ -90,8 +90,8 @@ describe('convertImage', () => {
 })
 
 describe('formatImage', () => {
-  it('writes one line per row of cells, and reads back as the same data', () => {
-    const image = { width: 16, height: 16, palette: ['#FBF7EE', '#3B2418'], cells: Array.from({ length: 256 }, (_, i) => i % 2) }
+  it('writes the number and one line per row of cells, and reads back as the same data', () => {
+    const image = { number: 1, width: 16, height: 16, palette: ['#FBF7EE', '#3B2418'], cells: Array.from({ length: 256 }, (_, i) => i % 2) }
     const json = formatImage(image)
 
     expect(JSON.parse(json)).toEqual(image)

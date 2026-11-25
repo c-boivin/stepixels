@@ -19,6 +19,11 @@ export interface PixelImage {
   cells: number[]
 }
 
+/** What `pnpm images:convert` writes: the image and its number, read from the file name (`03-feuille.png` → 3). */
+export interface PixelImageFile extends PixelImage {
+  number: number
+}
+
 export type ConversionResult = { image: PixelImage } | { errors: string[] }
 
 /**
@@ -60,11 +65,12 @@ export function convertImage(
 }
 
 /** JSON with one line per row of cells, so that a change is easy to read in a diff. */
-export function formatImage({ width, height, palette, cells }: PixelImage): string {
+export function formatImage({ number, width, height, palette, cells }: PixelImageFile): string {
   const rows = Array.from({ length: height }, (_, row) => `    ${cells.slice(row * width, (row + 1) * width).join(', ')}`)
 
   return [
     '{',
+    `  "number": ${number},`,
     `  "width": ${width},`,
     `  "height": ${height},`,
     `  "palette": ${JSON.stringify(palette)},`,

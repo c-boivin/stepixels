@@ -2,7 +2,7 @@
  * Converts the pixel art PNGs into the JSON the app draws (issue #18).
  *
  * Run with `pnpm images:convert`: every PNG of `assets/images/pixel-art/` gives a
- * JSON with the same name in `src/data/images/`. A PNG that breaks a rule (file
+ * JSON with the same name in `src/data/images/`, with the image number read from the file name. A PNG that breaks a rule (file
  * name, size, transparency, number of colors) or cannot be read is refused with a message.
  * The drawing rules themselves are in `pixel-image.ts`, tested with Jest.
  */
@@ -56,11 +56,13 @@ function convertFile(file: string): string[] {
     return [`not a readable PNG (${error instanceof Error ? error.message : String(error)})`]
   }
 
-  const result = convertImage(png, { smallAllowed: file.startsWith('01-') })
+  // The file name is the only place the number is written: the catalogue reads it from the JSON
+  const number = Number(file.slice(0, 2))
+  const result = convertImage(png, { smallAllowed: number === 1 })
   if ('errors' in result) return result.errors
 
   const output = join(OUTPUT_DIR, `${withoutExtension(file)}.json`)
-  writeFileSync(output, formatImage(result.image))
+  writeFileSync(output, formatImage({ number, ...result.image }))
   console.log(`✓ ${file} → ${output} (${result.image.width} × ${result.image.height}, ${result.image.palette.length} colors)`)
   return []
 }

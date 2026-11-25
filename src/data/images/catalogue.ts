@@ -6,8 +6,13 @@ import mushroom from './01-champignon.json'
 import star from './02-etoile.json'
 import leaf from './03-feuille.json'
 
-/** Cells and colors of an image, as written by `pnpm images:convert`. */
+/** Number, cells and colors of an image, as written by `pnpm images:convert`. */
 interface PixelData {
+  /**
+   * Order of the image, shown as `01`, and stored in `validations.image_number`.
+   * Read from the PNG's file name by the script, so it is never typed by hand.
+   */
+  number: number
   width: number
   height: number
   /** Colors of the image, `#RRGGBB`. */
@@ -18,8 +23,6 @@ interface PixelData {
 
 /** One image of the catalogue, shipped with the app so it works offline. */
 export interface CatalogueImage extends PixelData {
-  /** Order of the image, shown as `01`, and stored in `validations.image_number`. */
-  number: number
   /** Key of the image's name in `fr.json` (`LE CHAMPIGNON`). */
   nameKey: string
   /** The original PNG, shown when the image is finished. */
@@ -28,13 +31,13 @@ export interface CatalogueImage extends PixelData {
   steps: number
 }
 
-function catalogueImage(number: number, nameKey: string, data: PixelData, source: ImageRequireSource): CatalogueImage {
-  return { number, nameKey, ...data, source, steps: data.cells.length * STEPS_PER_PIXEL }
+function catalogueImage(nameKey: string, data: PixelData, source: ImageRequireSource): CatalogueImage {
+  return { ...data, nameKey, source, steps: data.cells.length * STEPS_PER_PIXEL }
 }
 
 /** Every image, in the order they are revealed. */
 export const CATALOGUE: readonly CatalogueImage[] = Object.freeze([
-  catalogueImage(1, 'images.mushroom', mushroom, require('../../../assets/images/pixel-art/01-champignon.png')),
-  catalogueImage(2, 'images.star', star, require('../../../assets/images/pixel-art/02-etoile.png')),
-  catalogueImage(3, 'images.leaf', leaf, require('../../../assets/images/pixel-art/03-feuille.png')),
+  catalogueImage('images.mushroom', mushroom, require('../../../assets/images/pixel-art/01-champignon.png')),
+  catalogueImage('images.star', star, require('../../../assets/images/pixel-art/02-etoile.png')),
+  catalogueImage('images.leaf', leaf, require('../../../assets/images/pixel-art/03-feuille.png')),
 ])
