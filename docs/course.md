@@ -78,7 +78,7 @@ One ADR per important decision: context and constraints, decision and alternativ
 ### Teacher's references
 
 - Example repository: https://github.com/bastienrobert/ticketing (monorepo: `apps/mobile` is the Expo app, `apps/server` the events API, `docs/adr/` the ADRs). The teacher updates it during the week; see "Teacher's example repository" in `CLAUDE.md`.
-  - **Last reviewed commit**: `4356dca` (2026-11-18, "feat(mobile): add favorites persistence in local db"). Checked again on 2026-11-25: no new commit.
+  - **Last reviewed commit**: `d621601` (2026-11-18, "feat(mobile): add calendar event after purchase"), reviewed on 2026-11-25. Since `4356dca`: switch to a development build (`expo run:ios` / `expo run:android`), mocked Apple Pay from a local native module loaded with `requireOptionalNativeModule`, and adding the event to the calendar with the permission flow of slides 76–77 (`lib/calendar.ts`, native permission texts in `src/data/messages/native/fr.json` through `locales` in `app.json`).
 - Exercise 1 correction (React web catalogue) and exercise 2 correction (React Native carousel): source of `docs/conventions.md`.
 
 ### Not yet covered

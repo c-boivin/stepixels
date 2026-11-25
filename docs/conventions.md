@@ -143,6 +143,23 @@ Course slides 76–81: one capability, one consent.
 - A **blocking screen** only when the capability is essential to the app; otherwise offer an alternative and let the user continue.
 - Sensors and other subscriptions: subscribe only while they are needed, and remove the subscription in the effect's cleanup.
 - Every permission text (explanation, buttons) goes through i18n, like any other text.
+- **A function in `lib/` handles the permission, the screen handles the message** (teacher's `lib/calendar.ts`). The function reads the permission, asks if `canAskAgain`, and returns a result the screen can switch on:
+
+```ts
+export type StepsAccess = 'granted' | 'refused' | 'blocked'
+
+export async function requestStepsAccess(): Promise<StepsAccess> {
+  const permission = await getPermissionsAsync()
+  if (permission.granted) return 'granted'
+  if (!permission.canAskAgain) return 'blocked'
+
+  const { granted } = await requestPermissionsAsync()
+  return granted ? 'granted' : 'refused'
+}
+```
+
+  `refused` (just declined): respect the choice, do not insist. `blocked` (only the Settings can allow it): offer `Linking.openSettings()`.
+- **A native module that a platform does not have must not crash the app** (teacher's `lib/apple-pay.ts`). Isolate it in `lib/` behind one function with the same signature on every platform: platform files (`steps.ios.ts` / `steps.android.ts`), or `requireOptionalNativeModule` when the module may be missing from the build. Screens never import the native module directly.
 
 ## Texts (i18n)
 
