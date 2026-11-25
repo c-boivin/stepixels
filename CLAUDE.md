@@ -58,8 +58,8 @@ Expo ships breaking changes with every SDK. APIs from older SDKs are often renam
 
 - Never commit on `main`. One small branch per change, then a pull request reviewed by the other member (code review is graded individually).
 - Work comes from the GitHub issues (one issue = one ticket of the backlog). Name the branch `<type>/<issue number>-<short-topic>`, for example `feat/15-step-source`. A change without an issue (docs, tooling) keeps `<type>/<short-topic>`.
-- Commit messages and PR titles follow Conventional Commits: `type(scope): description` (enforced by commitlint on commit; PR titles are not checked, so check them yourself). A commit may reference its issue in a footer: `Refs: #15`.
-- PR description: follow `.github/pull_request_template.md` (GitHub fills it in for every new PR): `## Why` and `## What`, then one line that links the issues: `Closes #15` when the PR finishes the issue (GitHub closes it on merge), `Refs #15` when it only moves it forward. One keyword per issue: `Closes #27, closes #30`. The keyword works in the description only, not in the title.
+- Commit messages and PR titles follow Conventional Commits: `type(scope): description` (enforced by commitlint on commit; PR titles are not checked, so check them yourself).
+- PR description = the body of the commit message: GitHub pastes it into a PR with one commit. Write the body as one bullet per change, then a footer that links the issues: `Closes #15` when the PR finishes the issue (GitHub closes it on merge), `Refs #15` when it only moves it forward. One keyword per issue: `Closes #27, closes #30`. A PR with several commits gets the same bullets and footer, written by hand. The keyword works in the description and the commit body, not in the title.
 - Delete each branch once its pull request is merged: on GitHub ("Delete branch" button, or the repository setting "Automatically delete head branches"), then locally with `git switch main && git pull && git fetch --prune && git branch -d <branch>`.
 - Use `pnpm` for every command.
 
