@@ -35,3 +35,19 @@ jest.mock('react-native-health-connect', () => ({
   requestPermission: jest.fn(),
   aggregateRecord: jest.fn(),
 }))
+
+// SecureStore keeps the Supabase session in the phone's keychain: here, an in-memory store
+// (empty it in beforeEach with `jest.requireMock('expo-secure-store').__store.clear()`)
+jest.mock('expo-secure-store', () => {
+  const store = new Map<string, string>()
+  return {
+    __store: store,
+    getItemAsync: async (key: string) => store.get(key) ?? null,
+    setItemAsync: async (key: string, value: string) => {
+      store.set(key, value)
+    },
+    deleteItemAsync: async (key: string) => {
+      store.delete(key)
+    },
+  }
+})
