@@ -105,7 +105,7 @@ route ──► data/get-<page>-page.ts ──► repositories/<resource>.reposi
 
 ## Local storage
 
-The storage choice is still open: it will be an ADR. These rules apply to whichever storage we choose (course slides 64–69).
+The storage is decided in ADR-004: SQLite with Drizzle for records, AsyncStorage for small preferences, SecureStore for secrets (course slides 64–69).
 
 - One storage per kind of data: React state for the interface, AsyncStorage for small preferences, SQLite for lists and records, **SecureStore for secrets** (tokens), FileSystem for files and media.
 - SQLite and AsyncStorage are **not encrypted**: never store a secret there.
@@ -124,6 +124,18 @@ The storage choice is still open: it will be an ADR. These rules apply to whiche
 - Empty and "no results": handled by the list (`ListEmptyComponent`), with a different message for each case (nothing at all, no favorite yet, no result for these filters) and an action when one is useful (reset filters, browse events).
 - Pull-to-refresh on lists: `refreshing` + `onRefresh` from `useRequest`.
 - When the app becomes active again, or a screen gets the focus (`useIsFocused`), revalidate the data that may have changed. Retries are limited and spaced out; listeners and requests are cleaned up.
+
+## Permissions and native capabilities
+
+Course slides 76–81: one capability, one consent.
+
+- **Read the state first** (`undetermined`, `granted`, `denied`) before asking or using the capability. While the state is loading, show a loading state.
+- `undetermined`: **explain the benefit, then ask** at the moment the user needs the capability, never at launch without context.
+- `denied`: if `canAskAgain` is true, offer to ask again (once, no repeated prompts); if it is false, offer `Linking.openSettings()`.
+- When the app becomes `active` again (`AppState`), **read the permission again**: the user may have changed it in the system settings.
+- A **blocking screen** only when the capability is essential to the app; otherwise offer an alternative and let the user continue.
+- Sensors and other subscriptions: subscribe only while they are needed, and remove the subscription in the effect's cleanup.
+- Every permission text (explanation, buttons) goes through i18n, like any other text.
 
 ## Texts (i18n)
 
