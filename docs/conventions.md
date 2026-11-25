@@ -110,6 +110,13 @@ The storage is decided in ADR-004: SQLite with Drizzle for records, AsyncStorage
 - One storage per kind of data: React state for the interface, AsyncStorage for small preferences, SQLite for lists and records, **SecureStore for secrets** (tokens), FileSystem for files and media.
 - SQLite and AsyncStorage are **not encrypted**: never store a secret there.
 - With SQLite + Drizzle: the schema lives in `src/db/schema.ts`, migrations are generated (never written by hand) into `src/db/migrations/`, the client is created once in `lib/db.ts`, and the root layout applies the migrations at launch (`useMigrations`) before rendering the app.
+- Drizzle setup, as in the teacher's example repository (`apps/mobile`):
+  - dependencies: `expo-sqlite` (with `pnpm exec expo install`), `drizzle-orm`; dev dependencies: `drizzle-kit`, `babel-plugin-inline-import`;
+  - `drizzle.config.ts`: `dialect: 'sqlite'`, `driver: 'expo'`, `schema: './src/db/schema.ts'`, `out: './src/db/migrations'`;
+  - `metro.config.js`: `config.resolver.sourceExts.push('sql')`, so the migrations are bundled with the app;
+  - `babel.config.js`: plugin `['inline-import', { extensions: ['.sql'] }]`, so the migrations are imported as strings;
+  - `lib/db.ts`: `export const db = drizzle(openDatabaseSync('stepixels.db'))`;
+  - script `"db:generate": "drizzle-kit generate"`: run it after each schema change and commit the generated files.
 - SQL values always go through parameters (`?` or Drizzle), never inside the SQL string.
 - Clear the user's local data on sign-out.
 - No secrets in logs.
