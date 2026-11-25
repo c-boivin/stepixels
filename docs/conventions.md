@@ -21,6 +21,8 @@ Create a folder or file only when a feature needs it (see `CLAUDE.md`).
 | access to one resource, wherever it is stored (API, local database or both) | `src/repositories/<resource>.repository.ts` |
 | local database: Drizzle schema and generated migrations | `src/db/schema.ts` + `src/db/migrations/` |
 | pure TypeScript and clients (API client, database client, i18n, business rules) | `src/lib/` (`api.ts`, `db.ts`, `i18n.ts`…) |
+| pixel art: source PNGs, and the JSON the app draws (made by `pnpm images:convert`) | `assets/images/pixel-art/` + `src/data/images/` |
+| a developer script, not part of the app (run with Node) | `scripts/<name>.mts` |
 | colors (light and dark palettes, `useColors()`) | `src/styles/theme.ts` |
 
 ## One component = one folder
