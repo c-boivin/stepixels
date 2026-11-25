@@ -33,6 +33,14 @@
       "loading": "Chargement du nombre de pas de la communauté",
       "title": "TU VEUX EN FAIRE\nPARTIE ?",
       "button": "C’EST PARTI"
+    },
+    "rule": {
+      "step": "2 / 4",
+      "step_label": "Étape 2 sur 4",
+      "title": "100 PAS\n= 1 PIXEL",
+      "description": "Tous les 100 pas, une case\nde l’image se révèle.",
+      "button": "CONTINUER",
+      "button_value": "→"
     }
   }
 }

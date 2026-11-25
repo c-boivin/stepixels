@@ -1,0 +1,1 @@
+export { OnboardingRule } from './OnboardingRule'
