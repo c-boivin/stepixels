@@ -1,0 +1,7 @@
+allowBuilds:
+  # ships prebuilt binaries (comes with jest-expo): its build script is not needed
+  '@parcel/watcher': false
+  # downloads its prebuilt native binary: the in-memory database of the tests
+  better-sqlite3: true
+  # installs its binary: used by drizzle-kit to read the schema
+  esbuild: true

@@ -30,6 +30,9 @@ pnpm start                 # Metro dev server: scan the QR code with Expo Go
 pnpm ios | android | web   # start and open on a platform
 pnpm lint                  # lint
 pnpm exec tsc --noEmit     # typecheck
+pnpm test                  # unit and component tests (Jest)
+pnpm test:coverage         # tests + coverage summary (HTML report in coverage/, git-ignored)
+pnpm db:generate           # after a change to src/db/schema.ts: generate the migration, then commit it
 ```
 
 Add a dependency with `pnpm exec expo install <package>`: it picks the version compatible with SDK 58.

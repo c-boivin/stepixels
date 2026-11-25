@@ -46,3 +46,6 @@ example
 # Claude Code personal notes
 CLAUDE.local.md
 .claude/settings.local.json
+
+# test coverage report (pnpm test:coverage)
+coverage/
