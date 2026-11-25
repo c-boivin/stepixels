@@ -131,3 +131,40 @@ In V1, `DARK` is a copy of `LIGHT` and is never used. For V2: draw the dark pale
 - The Supabase CLI is not set up in the project (no `supabase/config.toml`): for now, each new migration is pasted into the SQL editor of the Supabase project, in order, by the member who merges it.
 - Nothing checks that the Supabase project matches the files: a migration applied twice or forgotten is only noticed when the app fails.
 - The local `validations` table (Drizzle, ADR-004) has the same columns: a column change needs a migration on both sides, checked in review.
+
+## Local storage: the phone's `validations` table has no `user_id`
+
+**Rule.** The local `validations` table (`src/db/schema.ts`) has the same columns as the Supabase table, **except `user_id`**, plus a `synced` flag (ADR-004). The account's id is added when a row is sent to Supabase.
+
+**Why.** One phone = one user: a guest has no id yet, and on sign-out the local validations are cleared (OQ-19). The column would always hold the same value, or nothing.
+
+**Rejected.**
+
+- An optional `user_id`, empty for a guest: closer to "same columns" in ADR-004, but every row would have to be updated at sign-up and sign-in, for no use while one account uses the phone.
+
+**Limits.**
+
+- A column change on one side still needs the same change on the other side (see "Database schema" above), `user_id` and `synced` apart.
+
+## Tests: Jest and React Native Testing Library, Maestro later
+
+**Rule.** Three levels of tests:
+
+- **Unit tests** with **Jest** (`jest-expo` preset, the one recommended by Expo): pure functions of `src/lib/` and repositories.
+- **Component and screen tests** with **React Native Testing Library**, and `expo-router/testing-library` for routes.
+- **End-to-end tests** with **Maestro**, on a phone: not set up yet, added in their own pull request once the first screens exist.
+
+Native modules do not run in Jest, which runs on the computer (Node): `test/setup.ts` replaces them for every test. The local database is a real in-memory SQLite database (`better-sqlite3`) with the same Drizzle migrations as the app; AsyncStorage uses its official Jest mock.
+
+**Why.** The course grades "targeted tests" (Code: 3 points), and the jury will ask what we test. Jest and React Native Testing Library are what the Expo SDK 58 docs recommend. Testing the repositories on a real SQLite database proves that a validation is really saved and read back, not only that a function was called.
+
+**Rejected.**
+
+- A fake database (mock) in the repository tests: no extra dependency, but the test only checks calls, not the SQL or the migrations.
+- Node's built-in SQLite instead of `better-sqlite3`: no extra dependency, but Drizzle 0.45 has no driver for it.
+
+**Limits.**
+
+- `better-sqlite3` and `esbuild` (used by `drizzle-kit`) run a script when installed: they are allowed in `pnpm-workspace.yaml` (`allowBuilds`). Any other package asking to run one is refused until the team agrees.
+- `better-sqlite3` is SQLite on the computer, not `expo-sqlite`: a difference between the two is only seen on the phone.
+- No coverage target yet: 80 % on `src/lib/` is set with the business rules tests (OQ-23).

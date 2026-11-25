@@ -117,6 +117,7 @@ The storage is decided in ADR-004: SQLite with Drizzle for records, AsyncStorage
   - `babel.config.js`: plugin `['inline-import', { extensions: ['.sql'] }]`, so the migrations are imported as strings;
   - `lib/db.ts`: `export const db = drizzle(openDatabaseSync('stepixels.db'))`;
   - script `"db:generate": "drizzle-kit generate"`: run it after each schema change and commit the generated files.
+- Small preferences go through `preferencesRepository` (`src/repositories/preferences.repository.ts`): one getter and one setter per preference, keys prefixed with `stepixels.`, and a default value for a first launch.
 - SQL values always go through parameters (`?` or Drizzle), never inside the SQL string.
 - Clear the user's local data on sign-out.
 - No secrets in logs.
@@ -210,6 +211,18 @@ The app has a light and a dark theme ("Themes" in `docs/specs.md`): **layout in 
 - Changing counter: `accessibilityLiveRegion="polite"`.
 - Touch targets at least 44 × 44.
 - A sheet can be closed with the screen reader's escape gesture (`onAccessibilityEscape`).
+
+## Tests
+
+See "Tests" in `docs/specs.md` for the tools and why.
+
+- A test sits **next to the file it tests**: `validations.repository.ts` → `validations.repository.test.ts`.
+- **Route tests** go in `test/app/` (`test/app/index.test.tsx`), never in `src/app/`: every file there is a route.
+- `test/setup.ts` replaces the native modules for every test (local database, AsyncStorage, `expo-crypto`). A new native module used by tested code gets its replacement there.
+- Repository tests use the real in-memory database: empty the tables in `beforeEach`, so each test starts from a known state.
+- Test what the code promises, not how it does it: query screens by their texts and accessibility labels (`getByText`, `getByRole`, `getByLabelText`), never by style or internal state.
+- One `describe` per file or unit, `it('…')` sentences that read as a rule: `it('saves a validation unsynced, with 100 steps per pixel')`.
+- A business rule (`src/lib/`) gets its edge cases tested: zero, limit, just under and just over (e.g. 99, 100 and 101 steps).
 
 ## Code style
 
