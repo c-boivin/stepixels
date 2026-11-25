@@ -104,3 +104,24 @@ Color props that are not styles use the same `colors`: `<Icon color={colors.acce
 - Colors are written in the JSX: reading a style means looking at two places.
 - A forgotten color is not detected: a text without `color` stays black on a dark background. Check every screen in both themes on the phone, and look for missing colors in reviews.
 - TypeScript forces `DARK` to have the same keys as `LIGHT`, but we must still choose a second palette: the teacher only provides a light one.
+
+## Database schema: SQL migrations in `supabase/migrations/`
+
+**Rule.** The Supabase schema (ADR-003) is written in SQL and committed in `supabase/migrations/`, in the Supabase CLI format: one file per change, named `<UTC timestamp>_<name>.sql` (for example `20261125090827_initial_schema.sql`).
+
+- A migration that is merged is **never edited**: a change to the schema is a new migration.
+- Each migration holds the tables with their Row Level Security policies, and the functions they need. Every table has Row Level Security on, and references the user with `on delete cascade` (ADR-003).
+- A comment explains each `security definer` function: why it needs admin rights, and what it is allowed to touch.
+
+**Why.** ADR-003 asks for the schema's SQL in the repository, so both members can recreate the database and review every change. One file per change keeps a history of the schema in the pull requests, and the CLI format lets us apply the files with the Supabase CLI later without renaming them.
+
+**Rejected.**
+
+- One `supabase/schema.sql` file: simpler to paste into the SQL editor, but no history: a review cannot tell which change is new and which is already applied.
+- Editing the schema in the Supabase dashboard only: nothing in the repository, nothing to review, and the schema cannot be recreated.
+
+**Limits.**
+
+- The Supabase CLI is not set up in the project (no `supabase/config.toml`): for now, each new migration is pasted into the SQL editor of the Supabase project, in order, by the member who merges it.
+- Nothing checks that the Supabase project matches the files: a migration applied twice or forgotten is only noticed when the app fails.
+- The local `validations` table (Drizzle, ADR-004) has the same columns: a column change needs a migration on both sides, checked in review.
