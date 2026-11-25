@@ -91,6 +91,8 @@ const STYLES = StyleSheet.create({
 
 Color props that are not styles use the same `colors`: `<Icon color={colors.accent} />`.
 
+**Contrast.** Every text smaller than 24 px reaches at least 4.5:1 on its background (WCAG AA). So small orange text uses `accentText`, never `accent` (2.93:1, for big elements only: 24 px text and more, primary button background, active icons), and grey text uses `muted`. Button labels on `accent` use `text` (4.63:1).
+
 In V1, `DARK` is a copy of `LIGHT` and is never used. For V2: draw the dark palette, fill `DARK`, and set `"userInterfaceStyle": "automatic"`. No component has to change.
 
 **Why.** The design is cream only, and drawing and checking a second palette does not fit in the 5 days. Many users keep their phone in dark mode, so we keep the dark theme for V2 and write the code for it now: it costs only `useColors()`. The teacher's example repository is light only, with fixed colors in `STYLES`: separating the colors keeps his `STYLES` pattern with only one more tool to learn.
