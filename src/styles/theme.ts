@@ -26,7 +26,7 @@ const LIGHT = {
 
 export type Colors = typeof LIGHT
 
-// The dark theme is not designed yet: it reuses the light colors for now
+// Dark theme = V2 (docs/specs.md): the app is forced to light in app.json, so this copy is never used yet
 const DARK: Colors = { ...LIGHT }
 
 export const COLORS = Object.freeze({ light: LIGHT, dark: DARK })
