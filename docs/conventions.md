@@ -144,7 +144,8 @@ The app has a light and a dark theme ("Themes" in `docs/specs.md`): **layout in 
 - `const STYLES = StyleSheet.create({...})` at the **bottom** of the file, with layout only: **no color in `STYLES`**.
 - Descriptive camelCase keys (`card`, `content`, `title`, `badge`). Shared state styles first: `pressed: { opacity: 0.75 }`.
 - Colors come from `const colors = useColors()` (`src/styles/theme.ts`) and are added in the JSX: `style={[STYLES.title, { color: colors.text }]}`. Same for color props: `<Icon color={colors.accent} />`, `placeholderTextColor={colors.muted}`.
-- Palette keys: `background`, `surface`, `text`, `muted`, `border`, `control`, `accent`, `error`. A new color is added to **both** `LIGHT` and `DARK`. Never a hard-coded color.
+- Palette keys: `background`, `surface`, `text`, `muted`, `border`, `control`, `accent`, `error`, plus our own `accentDark` and `pill`. A new color is added to **both** `LIGHT` and `DARK`. Never a hard-coded color. Pixel art colors are not in the theme: they come from each image's palette.
+- Text styles come from `TYPO` (`src/styles/theme.ts`), one key per Figma text style: `style={[TYPO.button14, { color: colors.surface }]}`. Never a hard-coded `fontFamily` or `fontSize` for a text that matches a Figma style.
 - Every text and every surface gets a color: a missing one stays black on a dark background. Check each screen in both themes on the phone.
 - Layout with `flex` and `gap` for lists and rows. Margins are fine for vertical spacing inside a text block (`marginTop` between a title and its description).
 - Screen content is centered with a maximum width: `width: '100%', maxWidth: 600, alignSelf: 'center'`.
