@@ -1,0 +1,31 @@
+// Step source shared by every screen (ADR-005).
+// Metro picks the platform file: `steps.ios.ts` on iOS, `steps.android.ts` on Android.
+// This file is the fallback for the other platforms (web): there is no step source there.
+// TypeScript reads this file, so the platform files must keep the same exports and signatures.
+
+/**
+ * Access to the phone's steps, for the screens to switch on (`docs/conventions.md`):
+ * - `undetermined`: never asked yet, explain the benefit then call `requestStepsAccess()`;
+ * - `granted`: the steps can be read;
+ * - `refused`: just declined, the system can still ask again;
+ * - `blocked`: only the settings can allow it.
+ */
+export type StepsAccess = 'undetermined' | 'granted' | 'refused' | 'blocked'
+
+/** Reads the current access, without asking the user. */
+export async function getStepsAccess(): Promise<StepsAccess> {
+  return 'blocked'
+}
+
+/** Asks the user for the access when the system still can, and returns the result. */
+export async function requestStepsAccess(): Promise<StepsAccess> {
+  return 'blocked'
+}
+
+/**
+ * Returns the steps stored by the phone between `start` and now, including the steps
+ * walked while the app was closed. Throws when the steps cannot be read (no access).
+ */
+export async function getStepsSince(start: Date): Promise<number> {
+  return 0
+}

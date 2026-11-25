@@ -21,13 +21,19 @@ React Native app built for the ECV M2 mobile course, by a team of two.
 pnpm install   # also installs the commit-msg hook (commitlint)
 ```
 
-Then install [Expo Go](https://expo.dev/go) on your phone.
+- **iPhone**: install [Expo Go](https://expo.dev/go).
+- **Android**: the app reads the steps from Health Connect, which is not in Expo Go, so it runs in a **development build** ([ADR-005](docs/adr/ADR-005-step-source.md)). Android 14 or later.
+  1. Install [Android Studio](https://developer.android.com/studio) (it brings the Android SDK and a JDK), then set `ANDROID_HOME` and `JAVA_HOME` ([Expo guide](https://docs.expo.dev/get-started/set-up-your-environment/?platform=android&device=physical&mode=development-build&buildEnv=local)).
+  2. On the phone: turn on USB debugging, plug it in, accept the prompt.
+  3. `pnpm android`: compiles the app, installs it and opens it. Build again after each native change (new native library, `app.json`); JavaScript changes reload live.
+  4. On a Samsung phone: in Samsung Health, allow it to write "Steps" to Health Connect.
 
 ## Commands
 
 ```bash
-pnpm start                 # Metro dev server: scan the QR code with Expo Go
-pnpm ios | android | web   # start and open on a platform
+pnpm start                 # Metro dev server: scan the QR code with Expo Go (iPhone); the Android development build connects to it over USB
+pnpm android               # build and run the Android development build
+pnpm ios | web             # start and open on a platform
 pnpm lint                  # lint
 pnpm typecheck             # typecheck the app, then scripts/ (its own tsconfig, with the Node types)
 pnpm test                  # unit and component tests (Jest)

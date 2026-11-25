@@ -23,3 +23,4 @@ We use them to justify our choices during the final presentation.
 | [ADR-002](ADR-002-app-architecture.md) | How do we structure the app? | Accepted |
 | [ADR-003](ADR-003-supabase-backend.md) | Which backend for accounts and progress backup? | Accepted |
 | [ADR-004](ADR-004-local-storage.md) | Where does the app store its data on the phone? | Accepted |
+| [ADR-005](ADR-005-step-source.md) | Where does the app read the steps from? | Accepted |
