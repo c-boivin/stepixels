@@ -32,10 +32,13 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
+    "@types/node": "^26.6.6",
+    "@types/pngjs": "^6.0.5",
     "@types/react": "~19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~58.0.4",
     "husky": "^9.1.7",
+    "pngjs": "^7.0.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -44,7 +47,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "images:convert": "node scripts/convert-images.mts"
   },
   "private": true
 }
