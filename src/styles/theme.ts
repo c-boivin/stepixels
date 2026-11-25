@@ -1,6 +1,7 @@
 import { useColorScheme } from 'react-native'
 
-// Colors from the Figma variables (fond, blanc, encre, gris, points, accent, accent-fonce, pastille)
+// Colors from the Figma variables (fond, blanc, encre, gris, points, accent, accent-texte, accent-fonce, pastille)
+// Small text uses gris and accent-texte: both reach the 4.5:1 contrast of WCAG AA on the background
 const LIGHT = {
   /** Background of every screen. */
   background: '#FBF7EE',
@@ -9,15 +10,17 @@ const LIGHT = {
   /** Main text, numbers, outlines. */
   text: '#3B2418',
   /** Labels, subtitles, inactive icons (used at 60% opacity). */
-  muted: '#A08A7A',
+  muted: '#7A6556',
   /** Dividers. */
   border: '#E8DFD0',
   /** Unrevealed cells, disabled button. */
   control: '#E8DFD0',
-  /** Primary button, block titles, active icons. */
+  /** Primary button, big orange elements (numbers, active icons). Too light for small text: use `accentText`. */
   accent: '#FF5A00',
-  /** Error marks ("!"). */
-  error: '#FF5A00',
+  /** Small orange text: overlines, links, settings values. */
+  accentText: '#B83E00',
+  /** Error messages, prefixed with "!" (small text, so the same color as `accentText`). */
+  error: '#B83E00',
   /** Shadow of the orange icons. */
   accentDark: '#D94800',
   /** Background of the highlighted number. */
@@ -26,7 +29,7 @@ const LIGHT = {
 
 export type Colors = typeof LIGHT
 
-// The dark theme is not designed yet: it reuses the light colors for now
+// Dark theme = V2 (docs/specs.md): the app is forced to light in app.json, so this copy is never used yet
 const DARK: Colors = { ...LIGHT }
 
 export const COLORS = Object.freeze({ light: LIGHT, dark: DARK })

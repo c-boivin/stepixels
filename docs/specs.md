@@ -46,9 +46,9 @@ Code and documentation stay in English; only the screens are in French.
 - `i18n.t()` accepts any string: TypeScript does not detect a misspelled or missing key. Check the texts on the phone.
 - Every new text needs a key in `fr.json`.
 
-## Themes: light and dark
+## Themes: light in V1, dark in V2
 
-**Rule.** The app follows the phone's setting (`"userInterfaceStyle": "automatic"` in `app.json`). **Layout and colors are separated**: `STYLES` holds the layout only, like the teacher's code but without colors, and a component reads the current palette with `useColors()` and adds the colors in its JSX.
+**Rule.** **V1 is light only**: `"userInterfaceStyle": "light"` in `app.json`, so the keyboard, the alerts and the status bar stay light whatever the phone's setting. The dark theme is planned for V2 (the design has no dark palette yet). The code is already ready for it: **layout and colors are separated**: `STYLES` holds the layout only, like the teacher's code but without colors, and a component reads the current palette with `useColors()` and adds the colors in its JSX.
 
 `src/styles/theme.ts`:
 
@@ -91,19 +91,24 @@ const STYLES = StyleSheet.create({
 
 Color props that are not styles use the same `colors`: `<Icon color={colors.accent} />`.
 
-**Why.** Many users keep their phone in dark mode, and the theme can change while the app runs. The teacher's example repository is light only, with fixed colors in `STYLES`: separating the colors keeps his `STYLES` pattern with only one more tool to learn.
+**Contrast.** Every text smaller than 24 px reaches at least 4.5:1 on its background (WCAG AA). So small orange text uses `accentText`, never `accent` (2.93:1, for big elements only: 24 px text and more, primary button background, active icons), and grey text uses `muted`. Button labels on `accent` use `text` (4.63:1).
+
+In V1, `DARK` is a copy of `LIGHT` and is never used. For V2: draw the dark palette, fill `DARK`, and set `"userInterfaceStyle": "automatic"`. No component has to change.
+
+**Why.** The design is cream only, and drawing and checking a second palette does not fit in the 5 days. Many users keep their phone in dark mode, so we keep the dark theme for V2 and write the code for it now: it costs only `useColors()`. The teacher's example repository is light only, with fixed colors in `STYLES`: separating the colors keeps his `STYLES` pattern with only one more tool to learn.
 
 **Rejected.**
 
-- Light only, like the teacher: simplest, but the app ignores the phone's setting.
+- Following the phone's setting in V1 (`"automatic"`) without a dark palette: the keyboard, alerts and status bar would turn dark on a cream screen, and the status bar text would be unreadable.
+- Light only with colors in `STYLES`, like the teacher: simplest now, but every component would have to change in V2.
 - Styles built per theme (`const useStyles = createThemedStyles((colors) => ({…}))`, one `StyleSheet` per theme and a hook that picks the current one): all colors stay in the styles, but it is a function that builds a hook, more abstract to explain, with two tools (`useStyles()` and `useColors()`), and further from the teacher's code.
 - The template's theming (`ThemedText`, `ThemedView`, `useTheme`): a wrapper component for every text and view, different from the course.
 
 **Limits.**
 
 - Colors are written in the JSX: reading a style means looking at two places.
-- A forgotten color is not detected: a text without `color` stays black on a dark background. Check every screen in both themes on the phone, and look for missing colors in reviews.
-- TypeScript forces `DARK` to have the same keys as `LIGHT`, but we must still choose a second palette: the teacher only provides a light one.
+- A forgotten color is not detected: a text without `color` will stay black on a dark background in V2. Look for missing colors in reviews.
+- TypeScript forces `DARK` to have the same keys as `LIGHT`, but the dark palette must still be designed (V2).
 
 ## Database schema: SQL migrations in `supabase/migrations/`
 
