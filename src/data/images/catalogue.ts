@@ -1,11 +1,10 @@
 import type { ImageRequireSource } from 'react-native'
 
+import { STEPS_PER_PIXEL } from '~/lib/rules'
+
 import mushroom from './01-champignon.json'
 import star from './02-etoile.json'
 import leaf from './03-feuille.json'
-
-/** Steps needed to reveal one cell of an image (R1: 100 steps = 1 pixel). */
-export const STEPS_PER_CELL = 100
 
 /** Cells and colors of an image, as written by `pnpm images:convert`. */
 interface PixelData {
@@ -25,12 +24,12 @@ export interface CatalogueImage extends PixelData {
   nameKey: string
   /** The original PNG, shown when the image is finished. */
   source: ImageRequireSource
-  /** Steps to reveal the whole image: number of cells × `STEPS_PER_CELL`. */
+  /** Steps to reveal the whole image: number of cells × `STEPS_PER_PIXEL`. */
   steps: number
 }
 
 function catalogueImage(number: number, nameKey: string, data: PixelData, source: ImageRequireSource): CatalogueImage {
-  return { number, nameKey, ...data, source, steps: data.cells.length * STEPS_PER_CELL }
+  return { number, nameKey, ...data, source, steps: data.cells.length * STEPS_PER_PIXEL }
 }
 
 /** Every image, in the order they are revealed. */

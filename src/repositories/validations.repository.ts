@@ -3,9 +3,7 @@ import { randomUUID } from 'expo-crypto'
 
 import { validations } from '~/db/schema'
 import { db } from '~/lib/db'
-
-/** Steps needed to reveal one pixel (R1). */
-export const STEPS_PER_PIXEL = 100
+import { STEPS_PER_PIXEL } from '~/lib/rules'
 
 export type Validation = typeof validations.$inferSelect
 
