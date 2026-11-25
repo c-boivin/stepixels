@@ -1,52 +1,51 @@
-import { useEffect, useState } from 'react'
-import { AppState, StyleSheet, Text, View } from 'react-native'
+import { Redirect } from 'expo-router'
+import { Suspense, use } from 'react'
+import { View } from 'react-native'
 
-import { getStepsAccess, getStepsSince, requestStepsAccess } from '~/lib/steps'
+import { Launch } from '~/components/views/Launch'
+import { Message } from '~/components/views/Message'
 
-import type { StepsAccess } from '~/lib/steps'
+import { useRequest } from '~/hooks/useRequest'
 
-import { TYPO, useColors } from '~/styles/theme'
+import { getHomePage } from '~/data/get-home-page'
+import { i18n } from '~/lib/i18n'
 
-// TEMPORARY (#15): shows today's steps so the step source can be checked on both phones
-// against the phone's health app. The home screen (#27) replaces this whole file.
+import type { ErrorBoundaryProps } from 'expo-router'
+
+export interface HomePageData {
+  /** `false` on a first launch: the user starts with the onboarding. */
+  onboardingDone: boolean
+}
+
+/**
+ * The first route (#22): the onboarding the first time, the home screen afterwards.
+ * The launch screen stays while the choice is read from the phone.
+ */
 export default function HomePage() {
-  const colors = useColors()
-  const [steps, setSteps] = useState<number | null>(null)
-
-  useEffect(() => {
-    let isCancelled = false
-
-    async function readSteps(access: Promise<StepsAccess>) {
-      if ((await access) !== 'granted') return
-      const count = await getStepsSince(startOfToday())
-      if (!isCancelled) setSteps(count)
-    }
-
-    // ask once at launch, then only read again when the app comes back to the foreground (R12)
-    readSteps(requestStepsAccess()).catch(console.warn)
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') readSteps(getStepsAccess()).catch(console.warn)
-    })
-
-    return () => {
-      isCancelled = true
-      subscription.remove()
-    }
-  }, [])
+  const [, page] = useRequest(getHomePage)
 
   return (
-    <View style={[STYLES.screen, { backgroundColor: colors.background }]}>
-      {steps !== null && <Text style={[TYPO.number80, { color: colors.text }]}>{steps}</Text>}
-    </View>
+    <Suspense fallback={<Launch />}>
+      <FirstScreen page={page} />
+    </Suspense>
   )
 }
 
-function startOfToday(): Date {
-  const date = new Date()
-  date.setHours(0, 0, 0, 0)
-  return date
+function FirstScreen({ page }: { page: Promise<HomePageData> }) {
+  const { onboardingDone } = use(page)
+
+  if (!onboardingDone) return <Redirect href="/onboarding/welcome" />
+
+  // the home screen comes with #27
+  return <View testID="home" />
 }
 
-const STYLES = StyleSheet.create({
-  screen: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-})
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <Message
+      title={i18n.t('common.error.title')}
+      description={i18n.t('common.error.description')}
+      button={{ label: i18n.t('common.error.button'), onPress: retry }}
+    />
+  )
+}
