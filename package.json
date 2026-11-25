@@ -41,6 +41,8 @@
     "@testing-library/react-native": "^14.1.0",
     "@types/better-sqlite3": "^9.6.0",
     "@types/jest": "^30.0.0",
+    "@types/node": "^26.6.6",
+    "@types/pngjs": "^6.0.5",
     "@types/react": "~19.3.0",
     "babel-plugin-inline-import": "^3.0.0",
     "babel-preset-expo": "^58.0.26",
@@ -51,6 +53,7 @@
     "husky": "^9.1.7",
     "jest": "^30.5.2",
     "jest-expo": "58.0.15",
+    "pngjs": "^7.0.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -62,7 +65,8 @@
     "prepare": "husky",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "images:convert": "node scripts/convert-images.mts"
   },
   "private": true,
   "jest": {
