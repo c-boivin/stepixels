@@ -50,7 +50,7 @@ Expo ships breaking changes with every SDK. APIs from older SDKs are often renam
 - Before using an Expo, EAS or React Native API, check the SDK 58 docs: https://docs.expo.dev/versions/v58.0.0/ (index of all docs: https://docs.expo.dev/llms.txt).
 - Add a dependency with `pnpm exec expo install <package>`, never `pnpm add`: it picks the version compatible with SDK 58.
 - Prefer Expo modules over third-party libraries.
-- Expo Go only includes the modules bundled with Expo. A library with its own native code needs a development build: ask the team before adding one, because we demo with Expo Go.
+- Expo Go only includes the modules bundled with Expo. A library with its own native code needs a development build (course slide 75). We run **iOS in Expo Go** and **Android in a development build** (Health Connect, needed to read the steps: see the step source ADR). Ask the team before adding any other module with native code: it must work in Expo Go on iOS.
 - Never create or edit `ios/` or `android/`: they are generated. Configure native behavior in `app.json` and config plugins.
 - Navigation uses Expo Router (`Link`, `router`, `useLocalSearchParams` from `expo-router`): see `docs/course.md` and ADR-002.
 
@@ -69,4 +69,4 @@ pnpm lint                # must pass
 pnpm exec expo install --check   # after adding or updating a dependency (behind a proxy: set EXPO_OFFLINE=1 first)
 ```
 
-Then test on a phone with Expo Go (`pnpm start`). Report what was checked and what was not.
+Then test on both phones: iPhone with Expo Go (`pnpm start`), Android with the development build. Report what was checked and what was not.

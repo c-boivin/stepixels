@@ -5,7 +5,7 @@ The slides are the reference: if this summary and the slides disagree, the slide
 For our own decisions, see `docs/adr/`. For code conventions, see `docs/conventions.md`.
 
 - [Part 1 — Project brief](#part-1--project-brief): requirements, schedule, grading, presentation.
-- [Part 2 — Technical guide](#part-2--technical-guide): React, React Native, navigation, HTTP, architecture, persistence, security, offline mode.
+- [Part 2 — Technical guide](#part-2--technical-guide): React, React Native, navigation, HTTP, architecture, persistence, security, offline mode, native APIs, permissions, sensors.
 
 ## Part 1 — Project brief
 
@@ -78,12 +78,12 @@ One ADR per important decision: context and constraints, decision and alternativ
 ### Teacher's references
 
 - Example repository: https://github.com/bastienrobert/ticketing (monorepo: `apps/mobile` is the Expo app, `apps/server` the events API, `docs/adr/` the ADRs). The teacher updates it during the week; see "Teacher's example repository" in `CLAUDE.md`.
-  - **Last reviewed commit**: `4356dca` (2026-11-18, "feat(mobile): add favorites persistence in local db").
+  - **Last reviewed commit**: `d621601` (2026-11-18, "feat(mobile): add calendar event after purchase"), reviewed on 2026-11-25. Since `4356dca`: switch to a development build (`expo run:ios` / `expo run:android`), mocked Apple Pay from a local native module loaded with `requireOptionalNativeModule`, and adding the event to the calendar with the permission flow of slides 76–77 (`lib/calendar.ts`, native permission texts in `src/data/messages/native/fr.json` through `locales` in `app.json`).
 - Exercise 1 correction (React web catalogue) and exercise 2 correction (React Native carousel): source of `docs/conventions.md`.
 
 ### Not yet covered
 
-Slides 73–94 (native APIs, permissions, sensors, tests, quality, distribution, final delivery) are not summarized yet. Add them here when the course is given.
+Slides 82–94 (tests, quality, distribution, final delivery) are not summarized yet. Add them here when the course is given.
 
 ## Part 2 — Technical guide
 
@@ -297,3 +297,102 @@ Network, resume and retries:
 - **Network**: `expo-network` gives a signal, but only the request proves the API is reachable.
 - **AppState**: when the app becomes `active` again, revalidate the data; background work is limited.
 - **Requests**: retries are limited and spaced out; clean up (cancel requests, remove listeners).
+
+### Native APIs: what the phone can do [73–75]
+
+Use the phone's capabilities while respecting the user. Each capability is an Expo module:
+
+| Capability | Module | Use |
+|---|---|---|
+| Position | `expo-location` | GPS |
+| Haptics | `expo-haptics` | Touch feedback |
+| Camera | `expo-camera` | Photo and QR code |
+| Motion | `expo-sensors` | Tilt and movement |
+| Notifications | `expo-notifications` | Local alerts |
+
+Two development strategies [75]:
+
+- **Expo Go**: a fixed set of modules (camera, location, haptics, sensors, notifications).
+- **Development build**: native modules compiled into the project. Needed for NFC (`react-native-nfc-manager`), Face ID (`expo-local-authentication`), push notifications on Android (SDK 53 and later) and any third-party module with native code.
+
+### Permissions [76–79]
+
+**One capability, one consent.** A permission has 3 states [76]:
+
+| State | Meaning | What to do |
+|---|---|---|
+| `undetermined` | Not asked yet | Explain, then ask at the right moment |
+| `granted` | Allowed | Use the capability |
+| `denied` | Refused | `canAskAgain` ? ask again : open the Settings |
+
+Read the state first, then ask or react to the refusal.
+
+**Respect the refusal** [77]: explain, leave the choice, allow or not to continue.
+
+- **Simple refusal**: explain the benefit, avoid asking again and again.
+- **System settings**: when `canAskAgain === false`, `Linking.openSettings()`.
+- **Alternative**: offer another way (type the code, continue without scanning).
+- **Back in the app**: when `AppState` becomes `active`, read the permission again.
+- **Blocking screen**: only if the capability is essential. Explain, then open the Settings.
+
+Camera permission [78]: wait for the state, offer one action, respect the refusal.
+
+```tsx
+const [permission, requestPermission] = useCameraPermissions()
+
+if (!permission) return <ActivityIndicator />
+
+if (!permission.granted) {
+  const canAskAgain = permission.canAskAgain
+
+  return (
+    <Button
+      title={canAskAgain ? 'Autoriser' : 'Réglages'}
+      onPress={canAskAgain ? requestPermission : Linking.openSettings}
+    />
+  )
+}
+```
+
+QR code scan [79]: detect the code once, then trigger the action. A ref blocks the scans that arrive before the state is updated.
+
+```tsx
+const scanned = useRef(false)
+const [code, setCode] = useState<string | null>(null)
+
+function scanCode(result: BarcodeScanningResult) {
+  if (scanned.current) return
+  scanned.current = true
+  setCode(result.data)
+}
+
+<CameraView
+  style={{ flex: 1 }}
+  barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+  onBarcodeScanned={code === null ? scanCode : undefined}
+/>
+```
+
+### Sensors [80–81]
+
+Haptic feedback and position [80]:
+
+```ts
+await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+
+const { granted } = await requestForegroundPermissionsAsync()
+if (!granted) return
+
+const position = await getCurrentPositionAsync({ accuracy: Accuracy.Balanced })
+```
+
+**Listen, then release** [81]: subscribe only while the sensor is enabled, and remove the subscription in the effect's cleanup.
+
+```ts
+useEffect(() => {
+  if (!isSensorEnabled) return
+  Accelerometer.setUpdateInterval(200)
+  const subscription = Accelerometer.addListener(setMotion)
+  return () => subscription.remove()
+}, [isSensorEnabled])
+```

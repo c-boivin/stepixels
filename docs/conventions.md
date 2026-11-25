@@ -105,11 +105,18 @@ route ──► data/get-<page>-page.ts ──► repositories/<resource>.reposi
 
 ## Local storage
 
-The storage choice is still open: it will be an ADR. These rules apply to whichever storage we choose (course slides 64–69).
+The storage is decided in ADR-004: SQLite with Drizzle for records, AsyncStorage for small preferences, SecureStore for secrets (course slides 64–69).
 
 - One storage per kind of data: React state for the interface, AsyncStorage for small preferences, SQLite for lists and records, **SecureStore for secrets** (tokens), FileSystem for files and media.
 - SQLite and AsyncStorage are **not encrypted**: never store a secret there.
 - With SQLite + Drizzle: the schema lives in `src/db/schema.ts`, migrations are generated (never written by hand) into `src/db/migrations/`, the client is created once in `lib/db.ts`, and the root layout applies the migrations at launch (`useMigrations`) before rendering the app.
+- Drizzle setup, as in the teacher's example repository (`apps/mobile`):
+  - dependencies: `expo-sqlite` (with `pnpm exec expo install`), `drizzle-orm`; dev dependencies: `drizzle-kit`, `babel-plugin-inline-import`;
+  - `drizzle.config.ts`: `dialect: 'sqlite'`, `driver: 'expo'`, `schema: './src/db/schema.ts'`, `out: './src/db/migrations'`;
+  - `metro.config.js`: `config.resolver.sourceExts.push('sql')`, so the migrations are bundled with the app;
+  - `babel.config.js`: plugin `['inline-import', { extensions: ['.sql'] }]`, so the migrations are imported as strings;
+  - `lib/db.ts`: `export const db = drizzle(openDatabaseSync('stepixels.db'))`;
+  - script `"db:generate": "drizzle-kit generate"`: run it after each schema change and commit the generated files.
 - SQL values always go through parameters (`?` or Drizzle), never inside the SQL string.
 - Clear the user's local data on sign-out.
 - No secrets in logs.
@@ -124,6 +131,35 @@ The storage choice is still open: it will be an ADR. These rules apply to whiche
 - Empty and "no results": handled by the list (`ListEmptyComponent`), with a different message for each case (nothing at all, no favorite yet, no result for these filters) and an action when one is useful (reset filters, browse events).
 - Pull-to-refresh on lists: `refreshing` + `onRefresh` from `useRequest`.
 - When the app becomes active again, or a screen gets the focus (`useIsFocused`), revalidate the data that may have changed. Retries are limited and spaced out; listeners and requests are cleaned up.
+
+## Permissions and native capabilities
+
+Course slides 76–81: one capability, one consent.
+
+- **Read the state first** (`undetermined`, `granted`, `denied`) before asking or using the capability. While the state is loading, show a loading state.
+- `undetermined`: **explain the benefit, then ask** at the moment the user needs the capability, never at launch without context.
+- `denied`: if `canAskAgain` is true, offer to ask again (once, no repeated prompts); if it is false, offer `Linking.openSettings()`.
+- When the app becomes `active` again (`AppState`), **read the permission again**: the user may have changed it in the system settings.
+- A **blocking screen** only when the capability is essential to the app; otherwise offer an alternative and let the user continue.
+- Sensors and other subscriptions: subscribe only while they are needed, and remove the subscription in the effect's cleanup.
+- Every permission text (explanation, buttons) goes through i18n, like any other text.
+- **A function in `lib/` handles the permission, the screen handles the message** (teacher's `lib/calendar.ts`). The function reads the permission, asks if `canAskAgain`, and returns a result the screen can switch on:
+
+```ts
+export type StepsAccess = 'granted' | 'refused' | 'blocked'
+
+export async function requestStepsAccess(): Promise<StepsAccess> {
+  const permission = await getPermissionsAsync()
+  if (permission.granted) return 'granted'
+  if (!permission.canAskAgain) return 'blocked'
+
+  const { granted } = await requestPermissionsAsync()
+  return granted ? 'granted' : 'refused'
+}
+```
+
+  `refused` (just declined): respect the choice, do not insist. `blocked` (only the Settings can allow it): offer `Linking.openSettings()`.
+- **A native module that a platform does not have must not crash the app** (teacher's `lib/apple-pay.ts`). Isolate it in `lib/` behind one function with the same signature on every platform: platform files (`steps.ios.ts` / `steps.android.ts`), or `requireOptionalNativeModule` when the module may be missing from the build. Screens never import the native module directly.
 
 ## Texts (i18n)
 
