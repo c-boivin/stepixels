@@ -22,3 +22,4 @@ We use them to justify our choices during the final presentation.
 | [ADR-001](ADR-001-why-react-native.md) | Why React Native? | Accepted |
 | [ADR-002](ADR-002-app-architecture.md) | How do we structure the app? | Accepted |
 | [ADR-003](ADR-003-supabase-backend.md) | Which backend for accounts and progress backup? | Accepted |
+| [ADR-004](ADR-004-local-storage.md) | Where does the app store its data on the phone? | Accepted |
