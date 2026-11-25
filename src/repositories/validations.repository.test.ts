@@ -1,7 +1,6 @@
-import { validationsRepository } from './validations.repository'
-
 import { validations } from '~/db/schema'
 import { db } from '~/lib/db'
+import { validationsRepository } from '~/repositories/validations.repository'
 
 describe('validationsRepository', () => {
   // each test starts from an empty table
@@ -25,21 +24,38 @@ describe('validationsRepository', () => {
     ])
   })
 
-  it('saves one row per image, each with its own id', () => {
+  it('saves one row per image, each with its own id, in the given order', () => {
     const rows = validationsRepository.add([
-      { imageNumber: 1, pixels: 4 },
-      { imageNumber: 2, pixels: 3 },
+      { imageNumber: 2, pixels: 4 },
+      { imageNumber: 1, pixels: 3 },
     ])
 
     expect(rows[0].id).not.toBe(rows[1].id)
     expect(rows[0].validatedAt).toBe(rows[1].validatedAt)
-    expect(validationsRepository.getAll().map(({ imageNumber }) => imageNumber)).toEqual([1, 2])
+    expect(validationsRepository.getAll().map(({ imageNumber }) => imageNumber)).toEqual([2, 1])
+  })
+
+  it.each([0, -3, 1.5, NaN])('refuses %p pixels and saves nothing', (pixels) => {
+    expect(() =>
+      validationsRepository.add([
+        { imageNumber: 1, pixels: 4 },
+        { imageNumber: 2, pixels },
+      ]),
+    ).toThrow(RangeError)
+    expect(validationsRepository.getAll()).toEqual([])
+  })
+
+  it('refuses in the database a row Supabase would refuse', () => {
+    const row = { id: 'id', imageNumber: 1, validatedAt: '2026-11-25T18:00:00.000Z' }
+
+    expect(() => db.insert(validations).values({ ...row, pixels: 0, steps: 0 }).run()).toThrow()
+    expect(() => db.insert(validations).values({ ...row, pixels: 2, steps: 150 }).run()).toThrow()
   })
 
   it('saves nothing when one row of the validation fails', () => {
     // the same id twice breaks the primary key on the second row
     const crypto = jest.requireMock<{ randomUUID: () => string }>('expo-crypto')
-    const randomUUID = jest.spyOn(crypto, 'randomUUID').mockReturnValue('same-id')
+    jest.spyOn(crypto, 'randomUUID').mockReturnValue('same-id')
 
     expect(() =>
       validationsRepository.add([
@@ -48,8 +64,6 @@ describe('validationsRepository', () => {
       ]),
     ).toThrow()
     expect(validationsRepository.getAll()).toEqual([])
-
-    randomUUID.mockRestore()
   })
 
   it('returns the validations oldest first', () => {
@@ -57,30 +71,5 @@ describe('validationsRepository', () => {
     validationsRepository.add([{ imageNumber: 1, pixels: 1 }], new Date('2026-11-25T08:00:00.000Z'))
 
     expect(validationsRepository.getAll().map(({ pixels }) => pixels)).toEqual([1, 2])
-  })
-
-  it('keeps the unsynced validations in the queue until they are marked synced', () => {
-    const [first] = validationsRepository.add([{ imageNumber: 1, pixels: 2 }])
-    const [second] = validationsRepository.add([{ imageNumber: 1, pixels: 5 }])
-
-    validationsRepository.markSynced([first.id])
-
-    expect(validationsRepository.getUnsynced().map(({ id }) => id)).toEqual([second.id])
-  })
-
-  it('does nothing when no id is marked synced', () => {
-    validationsRepository.add([{ imageNumber: 1, pixels: 2 }])
-
-    validationsRepository.markSynced([])
-
-    expect(validationsRepository.getUnsynced()).toHaveLength(1)
-  })
-
-  it('deletes every validation on clear', () => {
-    validationsRepository.add([{ imageNumber: 1, pixels: 2 }])
-
-    validationsRepository.clear()
-
-    expect(validationsRepository.getAll()).toEqual([])
   })
 })

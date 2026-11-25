@@ -31,14 +31,19 @@ export const preferencesRepository = {
     await AsyncStorage.setItem(KEYS.resetTime, time)
   },
 
-  /** Last community total received, shown offline (OQ-7). `null` before the first one. */
+  /** Last community total received, shown offline (OQ-7). `null` before the first one, or if the stored value is unreadable. */
   async getCommunityTotal(): Promise<number | null> {
     const value = await AsyncStorage.getItem(KEYS.communityTotal)
+    const total = value === null ? NaN : Number(value)
 
-    return value === null ? null : Number(value)
+    // the onboarding hides its sentence on null: never show "NaN"
+    return Number.isFinite(total) ? total : null
   },
 
+  /** Throws a `RangeError` when `total` is not a finite number. */
   async setCommunityTotal(total: number) {
+    if (!Number.isFinite(total)) throw new RangeError(`Community total: ${total}, expected a finite number`)
+
     await AsyncStorage.setItem(KEYS.communityTotal, String(total))
   },
 }

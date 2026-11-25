@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5e80e430-1c90-4763-b6a6-fc3b56588ae0",
+  "id": "b9b0e1ec-51ce-4d4d-8da9-d44e166a705a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "validations": {
@@ -55,7 +55,16 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "validations_pixels_check": {
+          "name": "validations_pixels_check",
+          "value": "\"validations\".\"pixels\" > 0"
+        },
+        "validations_steps_check": {
+          "name": "validations_steps_check",
+          "value": "\"validations\".\"steps\" = \"validations\".\"pixels\" * 100"
+        }
+      }
     }
   },
   "views": {},

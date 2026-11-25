@@ -216,7 +216,7 @@ The app has a light and a dark theme ("Themes" in `docs/specs.md`): **layout in 
 
 See "Tests" in `docs/specs.md` for the tools and why.
 
-- A test sits **next to the file it tests**: `validations.repository.ts` → `validations.repository.test.ts`.
+- A test sits **next to the file it tests**: `validations.repository.ts` → `validations.repository.test.ts`. It imports through the `~/` alias, like any file outside a component folder.
 - **Route tests** go in `test/app/` (`test/app/index.test.tsx`), never in `src/app/`: every file there is a route.
 - `test/setup.ts` replaces the native modules for every test (local database, AsyncStorage, `expo-crypto`). A new native module used by tested code gets its replacement there.
 - Repository tests use the real in-memory database: empty the tables in `beforeEach`, so each test starts from a known state.

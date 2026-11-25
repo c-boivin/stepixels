@@ -25,7 +25,7 @@ This file is shared by the team. If a rule here conflicts with a team member's r
 - **ADR or spec?** (teacher's rule) An ADR is only for a **major** technical choice, hard to undo, that shapes the whole project: framework, backend or database, app architecture. Write it when the choice is made (format: `docs/adr/TEMPLATE.md`), with status `Accepted`: approving its pull request is what accepts it, so never add a commit just to change the status. Every other technical choice is a section of `docs/specs.md` (rule, why, rejected, limits). If unsure, ask.
 - **Never edit an accepted ADR.** Write a new one that supersedes it (see `docs/adr/README.md`).
 - Keep the scope to the course requirements in `docs/course.md`. Propose extras, do not build them unasked.
-- **Create files only when a feature needs them** (teacher's rule): a file or folder appears in the pull request of the feature that uses it. No empty folders, no files prepared in advance (theme, i18n, contexts, API client…), even if the architecture in ADR-002 lists them.
+- **Create files only when a feature needs them** (teacher's rule): a file or folder appears in the pull request of the feature that uses it. No empty folders, no files prepared in advance (theme, i18n, contexts, API client…), even if the architecture in ADR-002 lists them. A backlog issue counts as a feature, data and tech issues too (storage, image catalogue): its pull request ships only what the issue's expected behaviour and acceptance criteria ask for. A function that only a later issue needs is added in that issue's pull request (for example, sending the offline queue comes with the backup issue).
 
 ## New course slides
 
