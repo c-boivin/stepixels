@@ -5,5 +5,10 @@
       "description": "L’app n’a pas pu préparer tes données sur ce téléphone. Réessaie, ou redémarre l’app.",
       "button": "RÉESSAYER"
     }
+  },
+  "images": {
+    "mushroom": "LE CHAMPIGNON",
+    "star": "L’ÉTOILE",
+    "leaf": "LA FEUILLE"
   }
 }

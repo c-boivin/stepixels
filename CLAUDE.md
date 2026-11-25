@@ -66,7 +66,7 @@ Expo ships breaking changes with every SDK. APIs from older SDKs are often renam
 ## Before saying a task is done
 
 ```bash
-pnpm exec tsc --noEmit   # must pass
+pnpm typecheck           # must pass (the app, then scripts/)
 pnpm lint                # must pass
 pnpm exec expo install --check   # after adding or updating a dependency (behind a proxy: set EXPO_OFFLINE=1 first)
 ```
