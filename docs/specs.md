@@ -116,6 +116,7 @@ In V1, `DARK` is a copy of `LIGHT` and is never used. For V2: draw the dark pale
 
 - A migration that is merged is **never edited**: a change to the schema is a new migration.
 - Each migration holds the tables with their Row Level Security policies, and the functions they need. Every table has Row Level Security on, and references the user with `on delete cascade` (ADR-003).
+- Every table also gets its **`grant`s**, matching its policies and nothing more (for example `grant select, insert on public.validations to authenticated`). Postgres checks the role's privileges on the table first, then Row Level Security: Supabase no longer grants table privileges to `anon` and `authenticated` by default, so a table without `grant` refuses every request, whatever its policies say.
 - A comment explains each `security definer` function: why it needs admin rights, and what it is allowed to touch.
 
 **Why.** ADR-003 asks for the schema's SQL in the repository, so both members can recreate the database and review every change. One file per change keeps a history of the schema in the pull requests, and the CLI format lets us apply the files with the Supabase CLI later without renaming them.
