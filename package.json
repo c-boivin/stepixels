@@ -66,7 +66,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "db:generate": "drizzle-kit generate",
-    "images:convert": "node scripts/convert-images.mts"
+    "images:convert": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/convert-images.mts"
   },
   "private": true,
   "jest": {
