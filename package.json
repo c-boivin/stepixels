@@ -62,6 +62,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "prepare": "husky",
     "test": "jest",
     "test:coverage": "jest --coverage",
