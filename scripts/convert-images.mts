@@ -2,11 +2,12 @@
  * Converts the pixel art PNGs into the JSON the app draws (issue #18).
  *
  * Run with `pnpm images:convert`: every PNG of `assets/images/pixel-art/` gives a
- * JSON with the same name in `src/data/images/`. A PNG that breaks a drawing rule
- * (size, transparency, number of colors) is refused with a message.
+ * JSON with the same name in `src/data/images/`. A PNG that breaks a rule (file
+ * name, size, transparency, number of colors) or cannot be read is refused with a message.
  */
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 
 const SOURCE_DIR = 'assets/images/pixel-art'
@@ -14,7 +15,10 @@ const OUTPUT_DIR = 'src/data/images'
 
 /** Allowed sizes, in cells per side (Figma notes): 16 × 16 is kept for image 01. */
 const SIZES = [16, 32, 48, 64]
+const SMALL_SIZE = 16
 const MAX_COLORS = 32
+/** `<two-digit number>-<name>.png`, for example `01-champignon.png`. */
+const FILE_NAME = /^\d{2}-[a-z0-9-]+\.png$/i
 
 /** Data of one image, as the app reads it. */
 export interface PixelImage {
@@ -31,12 +35,17 @@ export type ConversionResult = { image: PixelImage } | { errors: string[] }
 /**
  * Checks the drawing rules and builds the palette and the cells of a decoded PNG.
  * The palette is filled in reading order, so the same PNG always gives the same data.
+ * `smallAllowed`: whether 16 × 16 is allowed (image 01 only).
  */
-export function convertImage({ width, height, data }: Pick<PNG, 'width' | 'height' | 'data'>): ConversionResult {
+export function convertImage(
+  { width, height, data }: Pick<PNG, 'width' | 'height' | 'data'>,
+  { smallAllowed }: { smallAllowed: boolean },
+): ConversionResult {
   const errors: string[] = []
+  const sizes = smallAllowed ? SIZES : SIZES.filter((size) => size !== SMALL_SIZE)
 
-  if (width !== height || !SIZES.includes(width)) {
-    errors.push(`size is ${width} × ${height}, expected ${SIZES.map((size) => `${size} × ${size}`).join(', ')}`)
+  if (width !== height || !sizes.includes(width)) {
+    errors.push(`size is ${width} × ${height}, expected ${sizes.map((size) => `${size} × ${size}`).join(', ')}`)
   }
 
   const palette: string[] = []
@@ -86,21 +95,49 @@ function main() {
   mkdirSync(OUTPUT_DIR, { recursive: true })
 
   for (const file of files) {
-    const result = convertImage(PNG.sync.read(readFileSync(join(SOURCE_DIR, file))))
+    const errors = convertFile(file)
 
-    if ('errors' in result) {
+    if (errors.length > 0) {
       refused++
-      for (const error of result.errors) console.error(`✗ ${file}: ${error}`)
-      continue
+      for (const error of errors) console.error(`✗ ${file}: ${error}`)
     }
+  }
 
-    const output = join(OUTPUT_DIR, `${basename(file, '.png')}.json`)
-    writeFileSync(output, formatImage(result.image))
-    console.log(`✓ ${file} → ${output} (${result.image.width} × ${result.image.height}, ${result.image.palette.length} colors)`)
+  // A JSON whose PNG was renamed or deleted is not removed: warn, so it is not imported by mistake
+  const names = new Set(files.map(withoutExtension))
+  for (const json of readdirSync(OUTPUT_DIR).filter((file) => file.endsWith('.json'))) {
+    if (!names.has(withoutExtension(json))) console.warn(`! ${join(OUTPUT_DIR, json)} has no PNG in ${SOURCE_DIR}`)
   }
 
   console.log(`${files.length - refused} converted, ${refused} refused`)
   if (refused > 0) process.exitCode = 1
 }
 
-if (import.meta.main) main()
+/** Converts one PNG of `SOURCE_DIR` and writes its JSON. Returns the broken rules, empty when it is written. */
+function convertFile(file: string): string[] {
+  if (!FILE_NAME.test(file)) return ['name must be <two-digit number>-<name>.png, for example 01-champignon.png']
+
+  let png: PNG
+  try {
+    png = PNG.sync.read(readFileSync(join(SOURCE_DIR, file)))
+  } catch (error) {
+    return [`not a readable PNG (${error instanceof Error ? error.message : String(error)})`]
+  }
+
+  const result = convertImage(png, { smallAllowed: file.startsWith('01-') })
+  if ('errors' in result) return result.errors
+
+  const output = join(OUTPUT_DIR, `${withoutExtension(file)}.json`)
+  writeFileSync(output, formatImage(result.image))
+  console.log(`✓ ${file} → ${output} (${result.image.width} × ${result.image.height}, ${result.image.palette.length} colors)`)
+  return []
+}
+
+/** `01-champignon.PNG` → `01-champignon`, whatever the case of the extension. */
+function withoutExtension(file: string): string {
+  return file.replace(/\.(png|json)$/i, '')
+}
+
+// Run only when started by Node (`pnpm images:convert`), not when imported by a test.
+// `import.meta.main` would be simpler, but only exists from Node 24.2.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main()
