@@ -19,6 +19,8 @@ const LIGHT = {
   accent: '#FF5A00',
   /** Small orange text: overlines, links, settings values. */
   accentText: '#B83E00',
+  /** Text on `accent` (primary button label): dark in both themes, cream on orange is unreadable. */
+  onAccent: '#3B2418',
   /** Error messages, prefixed with "!" (small text, so the same color as `accentText`). */
   error: '#B83E00',
   /** Shadow of the orange icons. */
@@ -29,8 +31,21 @@ const LIGHT = {
 
 export type Colors = typeof LIGHT
 
-// Dark theme = V2 (docs/specs.md): the app is forced to light in app.json, so this copy is never used yet
-const DARK: Colors = { ...LIGHT }
+// Dark theme: the same browns and orange, inverted. Same contrast rule as LIGHT (docs/specs.md "Themes")
+const DARK: Colors = {
+  background: '#1C140F',
+  surface: '#2A201A',
+  text: '#F5EEE1',
+  muted: '#B3A291',
+  border: '#40332A',
+  control: '#40332A',
+  accent: '#FF6A1A',
+  accentText: '#FF8F52',
+  onAccent: '#1C140F',
+  error: '#FF8F52',
+  accentDark: '#B84300',
+  pill: '#4A2A17',
+}
 
 export const COLORS = Object.freeze({ light: LIGHT, dark: DARK })
 

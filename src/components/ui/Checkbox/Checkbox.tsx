@@ -9,7 +9,7 @@ export interface CheckboxProps {
   onChange: (checked: boolean) => void
 }
 
-/** A checkbox of the design (Figma "Case"): an 18-point square, orange with a small cream square when checked. */
+/** A checkbox of the design (Figma "Case"): an 18-point square, orange with a small square of the background color when checked. */
 export function Checkbox({ label, checked, onChange }: CheckboxProps) {
   const colors = useColors()
 

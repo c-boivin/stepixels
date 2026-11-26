@@ -19,7 +19,7 @@ export interface ButtonProps {
 /** The button of the design: full width, 56 high (Figma component "Bouton"), orange or outlined. */
 export function Button({ label, value, onPress, accessibilityHint, variant = 'primary', disabled = false }: ButtonProps) {
   const colors = useColors()
-  const textColor = disabled ? colors.muted : colors.text
+  const textColor = disabled ? colors.muted : variant === 'primary' ? colors.onAccent : colors.text
 
   return (
     <Pressable
