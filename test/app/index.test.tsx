@@ -191,6 +191,57 @@ describe('first route', () => {
       expect(screen.getByText('Hier, 1 230 pas n’ont pas été validés.')).toBeTruthy()
     })
 
+    it('shows a "Le saviez-vous ?" from 2 000 steps', async () => {
+      mockSteps({ today: 4230, yesterday: 0 })
+      // 0.1: not the Moon (1 in 20), then the first message of the tier, the Eiffel Tower
+      jest.spyOn(Math, 'random').mockReturnValue(0.1)
+
+      await renderRouter(ROUTES)
+
+      expect(await screen.findByText('LE SAVIEZ-VOUS ?')).toBeTruthy()
+      expect(screen.getByText('Tes 3,2 km, c’est 9,7 fois la tour Eiffel.')).toBeTruthy()
+    })
+
+    it('shows again the message kept for the same day and tier, whatever the next pick would be', async () => {
+      mockSteps({ today: 4230, yesterday: 0 })
+      // kept this morning for today (the day ends at tonight's reset)
+      await preferencesRepository.setFactChoice({
+        day: new Date('2026-11-26T20:00:00').toISOString(),
+        tier: 0,
+        fact: { landmark: 'eiffel', kind: 'times' },
+      })
+      jest.spyOn(Math, 'random').mockReturnValue(0.9)
+
+      await renderRouter(ROUTES)
+
+      expect(await screen.findByText('Tes 3,2 km, c’est 9,7 fois la tour Eiffel.')).toBeTruthy()
+    })
+
+    it('shows no "Le saviez-vous ?" under 2 000 steps: the block keeps its place', async () => {
+      mockSteps({ today: 1999, yesterday: 0 })
+
+      await renderRouter(ROUTES)
+
+      await screen.findByText('1999')
+      expect(screen.queryByText('LE SAVIEZ-VOUS ?')).toBeNull()
+    })
+
+    it('tells the distance of a finished image when the user swipes to it', async () => {
+      // image 01 finished, then a later validation on image 02 (unlocked by SUIVANT)
+      validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-25T10:00:00'))
+      validationsRepository.add([{ imageNumber: 2, pixels: 10 }], new Date('2026-11-25T12:00:00'))
+      mockSteps({ today: 0, yesterday: 0 })
+
+      await renderRouter(ROUTES)
+      await screen.findByText('EN COURS')
+      await swipeTo(0)
+      // the image's message fades in (no fact of the day: 0 steps)
+      await act(() => jest.advanceTimersByTimeAsync(400))
+
+      // image 01: 25 600 steps × 0,75 m = 19 km, just above a Paris → Versailles (17 km)
+      expect(screen.getByText('Cette image : 19 km de marche, plus qu’un Paris → Versailles.')).toBeTruthy()
+    })
+
     it('says nothing about a loss under 100 steps, which could not be validated', async () => {
       mockSteps({ today: 4230, yesterday: 99 })
 
@@ -273,6 +324,10 @@ describe('first route', () => {
         expect(backupRepository.sendPending).toHaveBeenCalled()
         expect(screen.getByRole('button', { name: 'VALIDATION…' })).toBeTruthy()
         expect(screen.getByText('+42 PIXELS')).toBeTruthy()
+        // the fact of the day fades out, then the reveal message fades in
+        await act(async () => {
+          jest.advanceTimersByTime(400)
+        })
         expect(screen.getByText('ÇA SE RÉVÈLE')).toBeTruthy()
         expect(screen.getByText('VALIDATION')).toBeTruthy()
 

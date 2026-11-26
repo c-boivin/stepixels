@@ -4,6 +4,7 @@ import { CATALOGUE } from '~/data/images/catalogue'
 import { countDays, getDayStart, getDayWindows, isWorthShowingLoss } from '~/lib/day'
 import { getImagesProgress, getUnlockedImageFromValidations, splitPixels } from '~/lib/progress'
 import { STEPS_PER_PIXEL } from '~/lib/rules'
+import { chooseFact } from '~/lib/facts'
 import { getStepsAccess, getStepsBetween } from '~/lib/steps'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 import { validationsRepository } from '~/repositories/validations.repository'
@@ -44,6 +45,7 @@ export async function getHomePage(): Promise<HomePageData> {
   })
 
   const steps = await readSteps(counter, lost)
+  const fact = await getFactOfTheDay(steps.toValidate, nextReset)
 
   // saved by SUIVANT, or shown by the validations: those come back with an account's progress (#64)
   const unlockedNumber = Math.max(
@@ -78,6 +80,10 @@ export async function getHomePage(): Promise<HomePageData> {
     } else if (lastValidation !== null && lastValidation.validatedAt >= getDayStart(resetTime, now)) {
       message = { kind: 'validated', steps: lastValidation.steps }
     }
+  }
+  // the fact of the day (#32), when nothing else has to be said
+  if (message === null && fact !== null && steps.toValidate !== null) {
+    message = { kind: 'fact', fact, steps: steps.toValidate }
   }
 
   return {
@@ -139,6 +145,19 @@ function getValidation({ revealing, allValidations, steps, pixels, resetTime, re
       finished: revealedTo === image.cells.length ? imageFinishedAdapter({ image, days, next }) : null,
     }),
   }
+}
+
+/**
+ * The "Le saviez-vous ?" message of the day (#32): picked once per day and per tier, then kept on
+ * the phone, so reopening the app shows the same one. `null` without steps or under 2 000.
+ */
+async function getFactOfTheDay(steps: number | null, nextReset: Date) {
+  if (steps === null) return null
+
+  const kept = await preferencesRepository.getFactChoice()
+  const choice = chooseFact(steps, nextReset.toISOString(), kept)
+  if (choice !== null && choice !== kept) await preferencesRepository.setFactChoice(choice)
+  return choice?.fact ?? null
 }
 
 type Window = { start: Date; end: Date }

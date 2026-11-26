@@ -1,5 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+import { LANDMARKS } from '~/lib/facts'
+
+import type { FactChoice } from '~/lib/facts'
+
 /** Daily reset time used until the user picks one, as in the Supabase profiles table. */
 export const DEFAULT_RESET_TIME = '20:00'
 
@@ -16,6 +20,7 @@ const KEYS = {
   restorePendingSince: 'stepixels.restore_pending_since',
   unlockedImage: 'stepixels.unlocked_image',
   unlockedAt: 'stepixels.unlocked_at',
+  factChoice: 'stepixels.fact_choice',
 }
 
 /** The last image the user can reveal (#31), and when it was unlocked. */
@@ -126,6 +131,30 @@ export const preferencesRepository = {
   async setRestorePendingSince(at: Date | null) {
     if (at === null) await AsyncStorage.removeItem(KEYS.restorePendingSince)
     else await AsyncStorage.setItem(KEYS.restorePendingSince, at.toISOString())
+  },
+
+  /** The "Le saviez-vous ?" message kept for the day (#32), `null` before the first one or if unreadable. */
+  async getFactChoice(): Promise<FactChoice | null> {
+    const value = await AsyncStorage.getItem(KEYS.factChoice)
+    if (value === null) return null
+    try {
+      const choice = JSON.parse(value) as FactChoice
+      const { day, tier, fact } = choice
+      const valid =
+        typeof day === 'string' &&
+        typeof tier === 'number' &&
+        typeof fact?.landmark === 'string' &&
+        fact.landmark in LANDMARKS &&
+        ['times', 'percent', 'whole', 'half'].includes(fact.kind)
+      // an older or broken value would show "NaN": pick a new message instead
+      return valid ? choice : null
+    } catch {
+      return null
+    }
+  },
+
+  async setFactChoice(choice: FactChoice) {
+    await AsyncStorage.setItem(KEYS.factChoice, JSON.stringify(choice))
   },
 
   async setStepsAccessAsked(asked: boolean) {

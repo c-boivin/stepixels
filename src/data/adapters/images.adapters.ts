@@ -1,4 +1,5 @@
 import { formatDistance } from '~/data/adapters/home.adapters'
+import { imageFactAdapter } from '~/data/adapters/facts.adapters'
 import { i18n } from '~/lib/i18n'
 
 import type { HomeCarouselItemParams } from '~/components/views/Home/HomeCarousel'
@@ -29,6 +30,7 @@ export function imageCardAdapter({ image, revealed, state }: ImageProgress<Catal
     title,
     tag: state === 'locked' ? null : i18n.t(`home.image.tag.${state}`),
     steps: state === 'finished' ? steps : null,
+    fact: state === 'finished' ? imageFactAdapter(image.steps) : null,
     summary:
       state === 'locked'
         ? i18n.t('home.image.summary.locked', { title })

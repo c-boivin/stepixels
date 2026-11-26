@@ -123,7 +123,45 @@
       "button_value": "→",
       "close": "FERMER"
     },
-    "distance": "%{km} km"
+    "distance": "%{km} km",
+    "fact": {
+      "title": "LE SAVIEZ-VOUS ?",
+      "times": {
+        "eiffel": "Tes %{km} km, c’est %{value} fois la tour Eiffel."
+      },
+      "percent": {
+        "versailles": "Tes %{km} km, c’est %{value} % d’un Paris → Versailles.",
+        "channel": "Tes %{km} km, c’est %{value} % de la Manche à la nage.",
+        "lyon": "Tes %{km} km, c’est %{value} % d’un Paris → Lyon.",
+        "france": "Tes %{km} km, c’est %{value} % de la France, du nord au sud.",
+        "earth": "Tes %{km} km, c’est %{value} % du tour de la Terre.",
+        "moon": "Tes %{km} km, c’est %{value} % du chemin jusqu’à la Lune."
+      },
+      "whole": {
+        "versailles": "Tes %{km} km, c’est un Paris → Versailles."
+      },
+      "half": {
+        "channel": "Tes %{km} km, c’est la moitié de la Manche à la nage."
+      },
+      "image_below": "Cette image : %{km} km de marche, presque %{landmark}.",
+      "image_above": "Cette image : %{km} km de marche, plus %{landmark}.",
+      "landmark": {
+        "eiffel": "la tour Eiffel",
+        "versailles": "un Paris → Versailles",
+        "channel": "la Manche à la nage",
+        "lyon": "un Paris → Lyon",
+        "france": "la France du nord au sud",
+        "earth": "le tour de la Terre"
+      },
+      "than": {
+        "eiffel": "que la tour Eiffel",
+        "versailles": "qu’un Paris → Versailles",
+        "channel": "que la Manche à la nage",
+        "lyon": "qu’un Paris → Lyon",
+        "france": "que la France du nord au sud",
+        "earth": "que le tour de la Terre"
+      }
+    }
   },
   "onboarding": {
     "welcome": {

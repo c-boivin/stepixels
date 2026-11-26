@@ -10,13 +10,16 @@ import type { PixelGridParams } from '~/components/ui/PixelGrid'
 import type { ImageState } from '~/lib/progress'
 
 // sizes of the Figma carousel: the card in front, its neighbours, and the space between them
-const CARD = 293
-const NEIGHBOUR = 240
+/** Side of the card in front, when the screen is tall enough (Figma). */
+export const CAROUSEL_CARD = 293
+const NEIGHBOUR_SCALE = 240 / CAROUSEL_CARD
 const GAP = 16
-/** From the center of one card to the next: the carousel snaps every `SLOT` points. */
-export const CAROUSEL_SLOT = CARD / 2 + GAP + NEIGHBOUR / 2
-const NEIGHBOUR_SCALE = NEIGHBOUR / CARD
 const NEIGHBOUR_OPACITY = 0.75
+
+/** From the center of one card to the next, for a card of this side: the carousel snaps every slot. */
+function carouselSlot(card = CAROUSEL_CARD): number {
+  return card / 2 + GAP + (card * NEIGHBOUR_SCALE) / 2
+}
 
 export interface HomeCarouselItemParams extends PixelGridParams {
   /** Number of the image in the catalogue. */
@@ -28,6 +31,8 @@ export interface HomeCarouselItemParams extends PixelGridParams {
   tag: string | null
   /** Steps of a finished image (`25 600`), `null` otherwise. */
   steps: string | null
+  /** "Le saviez-vous ?" about a finished image (#32), `null` otherwise. */
+  fact: string | null
   /** Everything the card shows, read as one sentence by the screen reader. */
   summary: string
   /** The reveal animation runs on this card (#29): an orange line instead of the next pixel. */
@@ -41,33 +46,47 @@ export interface HomeCarouselProps {
   index: number
   /** Called when the user swipes to another card. */
   onIndexChange: (index: number) => void
+  /** Side of the card in front: smaller on a short screen, so the home screen fits (default 293). */
+  card?: number
 }
 
 /**
  * The images of the home screen in a horizontal carousel (#28): the card in front, the finished
  * images on its left and the next image on its right, locked: only its dots and a padlock.
  */
-export function HomeCarousel({ items, index, onIndexChange }: HomeCarouselProps) {
+export function HomeCarousel({ items, index, onIndexChange, card = CAROUSEL_CARD }: HomeCarouselProps) {
   const { width } = useWindowDimensions()
+  const slot = carouselSlot(card)
   const list = useRef<FlatList<HomeCarouselItemParams>>(null)
   // created once: the scroll position drives the size and the fading of every card
-  const [scrollX] = useState(() => new Animated.Value(index * CAROUSEL_SLOT))
+  const [scrollX] = useState(() => new Animated.Value(index * slot))
   // the first position only: given again on each render, iOS would jump there instead of sliding
-  const [initialOffset] = useState(() => ({ x: index * CAROUSEL_SLOT, y: 0 }))
+  const [initialOffset] = useState(() => ({ x: index * slot, y: 0 }))
   // the card in front as the scroll knows it: a new `index` from the parent scrolls only when it differs
   const shownIndex = useRef(index)
 
   // room on each side, so that the first and the last cards can be centered
-  const side = (width - CAROUSEL_SLOT) / 2
+  const side = (width - slot) / 2
 
   useEffect(() => {
     if (index === shownIndex.current) return
     shownIndex.current = index
-    list.current?.scrollToOffset({ offset: index * CAROUSEL_SLOT, animated: true })
+    list.current?.scrollToOffset({ offset: index * slot, animated: true })
+    // only a new card in front scrolls: a new size is handled below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index])
 
+  // the card got its size once the screen was measured: stay on the same card, without sliding
+  const firstSlot = useRef(slot)
+  useEffect(() => {
+    if (slot === firstSlot.current) return
+    firstSlot.current = slot
+    list.current?.scrollToOffset({ offset: shownIndex.current * slot, animated: false })
+    scrollX.setValue(shownIndex.current * slot)
+  }, [slot, scrollX])
+
   function onScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const next = Math.min(Math.max(Math.round(event.nativeEvent.contentOffset.x / CAROUSEL_SLOT), 0), items.length - 1)
+    const next = Math.min(Math.max(Math.round(event.nativeEvent.contentOffset.x / slot), 0), items.length - 1)
     if (next === shownIndex.current) return
     shownIndex.current = next
     onIndexChange(next)
@@ -83,10 +102,10 @@ export function HomeCarousel({ items, index, onIndexChange }: HomeCarouselProps)
       // card `i` is centered at the scroll offset `i × SLOT`: the room on the left is a header, not a
       // padding, so that the list knows where each card is
       contentOffset={initialOffset}
-      getItemLayout={(_, itemIndex) => ({ length: CAROUSEL_SLOT, offset: side + CAROUSEL_SLOT * itemIndex, index: itemIndex })}
+      getItemLayout={(_, itemIndex) => ({ length: slot, offset: side + slot * itemIndex, index: itemIndex })}
       ListHeaderComponent={<View style={{ width: side }} />}
       showsHorizontalScrollIndicator={false}
-      snapToOffsets={items.map((_, itemIndex) => itemIndex * CAROUSEL_SLOT)}
+      snapToOffsets={items.map((_, itemIndex) => itemIndex * slot)}
       decelerationRate="fast"
       // one card per swipe, however fast: without it, a fling on Android runs past every card
       disableIntervalMomentum
@@ -98,7 +117,7 @@ export function HomeCarousel({ items, index, onIndexChange }: HomeCarouselProps)
       style={STYLES.list}
       renderItem={({ item, index: itemIndex }) => {
         // the card shrinks and fades as it leaves the front
-        const inputRange = [(itemIndex - 1) * CAROUSEL_SLOT, itemIndex * CAROUSEL_SLOT, (itemIndex + 1) * CAROUSEL_SLOT]
+        const inputRange = [(itemIndex - 1) * slot, itemIndex * slot, (itemIndex + 1) * slot]
         const scale = scrollX.interpolate({ inputRange, outputRange: [NEIGHBOUR_SCALE, 1, NEIGHBOUR_SCALE], extrapolate: 'clamp' })
         const opacity = scrollX.interpolate({ inputRange, outputRange: [NEIGHBOUR_OPACITY, 1, NEIGHBOUR_OPACITY], extrapolate: 'clamp' })
         // and its tag and blur follow the finger, instead of jumping once the swipe is over
@@ -109,10 +128,10 @@ export function HomeCarousel({ items, index, onIndexChange }: HomeCarouselProps)
             accessible
             accessibilityLabel={item.summary}
             accessibilityState={{ selected: itemIndex === index }}
-            style={[STYLES.slot, { opacity, transform: [{ scale }] }]}>
+            style={[STYLES.slot, { width: slot, height: card, opacity, transform: [{ scale }] }]}>
             <ImageCard
               {...gridOf(item)}
-              size={CARD}
+              size={card}
               tag={item.tag ?? undefined}
               // the next pixel is marked on a new image too (Figma "Nouvelle image", #31)
               showNext={(item.state === 'current' || item.state === 'new') && !item.revealing}
@@ -136,9 +155,10 @@ function gridOf({ width, height, palette, cells, revealed }: HomeCarouselItemPar
 const STYLES = StyleSheet.create({
   list: { flexGrow: 0, overflow: 'visible' },
   slot: {
-    width: CAROUSEL_SLOT,
-    height: CARD,
     alignItems: 'center',
     justifyContent: 'center',
   },
 })
+
+/** The slot of a full-size card: the carousel snaps every `CAROUSEL_SLOT` points. */
+export const CAROUSEL_SLOT = carouselSlot()
