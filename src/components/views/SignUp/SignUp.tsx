@@ -22,7 +22,16 @@ export interface SignUpForm {
   password: string
 }
 
+/** The texts of the sign-up when it saves a guest's image (#35): `GARDE TON IMAGE`. */
+export interface SignUpTexts {
+  title: string
+  subtitle: string
+  button: string
+}
+
 export interface SignUpProps {
+  /** Other texts than the plain sign-up (#35); the fields and the rules stay the same. */
+  texts?: SignUpTexts
   /** Creates the account: `null` when it worked, otherwise why it did not. */
   onSubmit: (form: SignUpForm) => Promise<SignUpError | null>
   onSignIn: () => void
@@ -33,7 +42,7 @@ export interface SignUpProps {
  * Sign-up (#33): first name, e-mail, password and the terms. The button stays beige until
  * everything is valid; "8 caractères minimum" shows once the user leaves a too short password.
  */
-export function SignUp({ onSubmit, onSignIn, onBack }: SignUpProps) {
+export function SignUp({ texts, onSubmit, onSignIn, onBack }: SignUpProps) {
   const colors = useColors()
   const [form, setForm] = useState<SignUpForm>({ firstName: '', email: '', password: '' })
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -72,11 +81,11 @@ export function SignUp({ onSubmit, onSignIn, onBack }: SignUpProps) {
 
   return (
     <AccountForm
-      title={i18n.t('account.sign_up.title')}
-      subtitle={i18n.t('account.sign_up.subtitle')}
+      title={texts?.title ?? i18n.t('account.sign_up.title')}
+      subtitle={texts?.subtitle ?? i18n.t('account.sign_up.subtitle')}
       onBack={onBack}
       button={{
-        label: i18n.t(sending ? 'account.sign_up.sending' : 'account.sign_up.button'),
+        label: sending ? i18n.t('account.sign_up.sending') : (texts?.button ?? i18n.t('account.sign_up.button')),
         value: sending ? undefined : i18n.t('account.button_value'),
         disabled: !valid || sending,
         onPress: onCreate,

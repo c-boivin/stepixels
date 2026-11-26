@@ -15,6 +15,11 @@ jest.mock('drizzle-orm/expo-sqlite/migrator', () => ({ useMigrations: jest.fn() 
 // the home screen reads the steps of the day: here, only the screen that opens matters
 jest.mock('~/lib/steps', () => ({ getStepsBetween: jest.fn().mockResolvedValue(0) }))
 
+// the account is read by the home screen: signed in here, so SUIVANT unlocks at once (#35)
+jest.mock('~/repositories/auth.repository', () => ({
+  authRepository: { getEmail: jest.fn().mockResolvedValue('camille@exemple.fr') },
+}))
+
 // the backup reaches Supabase: here, only when the layout asks for it matters
 jest.mock('~/repositories/backup.repository', () => ({
   backupRepository: { sendPending: jest.fn().mockResolvedValue(undefined) },

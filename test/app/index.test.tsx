@@ -8,6 +8,7 @@ import { CAROUSEL_SLOT } from '~/components/views/Home/HomeCarousel'
 import { validations } from '~/db/schema'
 import { db } from '~/lib/db'
 import { getStepsBetween } from '~/lib/steps'
+import { authRepository } from '~/repositories/auth.repository'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 import { backupRepository } from '~/repositories/backup.repository'
 import { validationsRepository } from '~/repositories/validations.repository'
@@ -17,6 +18,11 @@ import type { AppStateStatus } from 'react-native'
 // the onboarding screen loads the community total: here, only the route choice matters
 jest.mock('~/repositories/community.repository', () => ({
   communityRepository: { getTotal: jest.fn().mockResolvedValue(null) },
+}))
+
+// the account is read by the home screen: signed in here, so SUIVANT unlocks at once (#35)
+jest.mock('~/repositories/auth.repository', () => ({
+  authRepository: { getEmail: jest.fn().mockResolvedValue('camille@exemple.fr') },
 }))
 
 // a validation is sent at once (ADR-004): here, only that it is asked
@@ -32,6 +38,7 @@ const ROUTES = {
   index: { default: HomePage, ErrorBoundary },
   'onboarding/welcome': OnboardingWelcomePage,
   settings: () => <View testID="settings" />,
+  'account/sign-up': () => <View testID="save-image" />,
 }
 // the title and steps under the card are hidden from the screen reader (the card reads them)
 const HIDDEN = { includeHiddenElements: true }
@@ -422,6 +429,42 @@ describe('first route', () => {
         expect(screen.getByLabelText(`02 - L’ÉTOILE, aucun pixel révélé sur 1${SPACE}024`)).toBeTruthy()
         // the steps of the day can now be validated on image 02
         expect(screen.getByRole('button', { name: 'VALIDER' })).not.toBeDisabled()
+      })
+
+      it("asks a guest for an account before unlocking the next image (#35)", async () => {
+        jest.mocked(authRepository.getEmail).mockResolvedValueOnce(null)
+        validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-24T10:00:00'))
+        mockSteps({ today: 0, yesterday: 0 })
+        await renderRouter(ROUTES)
+
+        await fireEvent.press(await screen.findByRole('button', { name: 'SUIVANT' }))
+
+        expect(await screen.findByTestId('save-image')).toBeTruthy()
+        expect(screen).toHavePathname('/account/sign-up')
+        expect(screen).toHaveSearchParams({ unlock: '2' })
+        // image 02 stays locked until the account exists
+        expect((await preferencesRepository.getUnlockedImage()).number).toBe(1)
+      })
+
+      it('still shows the images when the session cannot be read (ADR-004)', async () => {
+        jest.mocked(authRepository.getEmail).mockRejectedValueOnce(new Error('corrupted session'))
+        validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-24T10:00:00'))
+        mockSteps({ today: 0, yesterday: 0 })
+
+        await renderRouter(ROUTES)
+
+        expect(await screen.findByRole('button', { name: 'SUIVANT' })).toBeTruthy()
+      })
+
+      it('says the image is saved once the account unlocked the next one (#35)', async () => {
+        validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-24T10:00:00'))
+        await preferencesRepository.unlockSavedImage(2)
+        mockSteps({ today: 0, yesterday: 0 })
+
+        await renderRouter(ROUTES)
+
+        expect(await screen.findByText('IMAGE SAUVEGARDÉE')).toBeTruthy()
+        expect(screen.getByText('Voici la 02, à toi de jouer.')).toBeTruthy()
       })
     })
   })

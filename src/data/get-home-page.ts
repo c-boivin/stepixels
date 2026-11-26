@@ -6,6 +6,7 @@ import { getImagesProgress, getUnlockedImageFromValidations, splitPixels } from 
 import { STEPS_PER_PIXEL } from '~/lib/rules'
 import { chooseFact } from '~/lib/facts'
 import { getStepsAccess, getStepsBetween } from '~/lib/steps'
+import { authRepository } from '~/repositories/auth.repository'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 import { validationsRepository } from '~/repositories/validations.repository'
 
@@ -30,11 +31,15 @@ export async function getHomePage(): Promise<HomePageData> {
 
   const now = new Date()
   const allValidations = validationsRepository.getAll()
-  const [resetTime, startedAt, unlocked] = await Promise.all([
+  const [resetTime, startedAt, unlocked, savedImage, email] = await Promise.all([
     preferencesRepository.getResetTime(),
     // an install that finished the onboarding before the start date was saved gets it now
     preferencesRepository.getStartedAt().then((date) => date ?? preferencesRepository.setStartedAt(now)),
     preferencesRepository.getUnlockedImage(),
+    preferencesRepository.getSavedImage(),
+    // a guest's SUIVANT asks for an account first (#35); a broken session must not hide the
+    // images (ADR-004, offline first): the e-mail kept at sign-in is used instead
+    authRepository.getEmail().catch(() => preferencesRepository.getAccountEmail()),
   ])
   const lastValidation = getLastValidation(allValidations)
   const { counter, lost, nextReset } = getDayWindows({
@@ -76,7 +81,8 @@ export async function getHomePage(): Promise<HomePageData> {
       unlocked.unlockedAt !== null &&
       (lastAt === null || unlocked.unlockedAt > lastAt)
     ) {
-      message = { kind: 'new_image', number: unlocked.number }
+      // unlocked by creating an account (#35), or by SUIVANT (#31)
+      message = { kind: savedImage === unlocked.number ? 'image_saved' : 'new_image', number: unlocked.number }
     } else if (lastValidation !== null && lastValidation.validatedAt >= getDayStart(resetTime, now)) {
       message = { kind: 'validated', steps: lastValidation.steps }
     }
@@ -88,6 +94,7 @@ export async function getHomePage(): Promise<HomePageData> {
 
   return {
     home: {
+      signedIn: email !== null,
       images: progress.map(imageCardAdapter),
       day: homeDayAdapter({ stepsAccess: steps.access, stepsToValidate: steps.toValidate, message, nextReset }),
       validation:

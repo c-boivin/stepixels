@@ -23,6 +23,8 @@ export type HomeMessageRaw =
   | { kind: 'validated'; steps: number }
   /** An image was unlocked, and nothing was validated since (#31). */
   | { kind: 'new_image'; number: number }
+  /** An image was unlocked by creating an account or signing in to keep the previous one (#35). */
+  | { kind: 'image_saved'; number: number }
   /** "Le saviez-vous ?" (#32): the fact of the day, when nothing else has to be said. */
   | { kind: 'fact'; fact: Fact; steps: number }
 
@@ -65,6 +67,11 @@ function homeMessageAdapter(message: HomeMessageRaw): HomeMessageParams {
       return {
         title: i18n.t('home.message.validated.title'),
         description: i18n.t('home.message.validated.description', { steps: COUNT_FORMAT.format(message.steps) }),
+      }
+    case 'image_saved':
+      return {
+        title: i18n.t('home.message.image_saved.title'),
+        description: i18n.t('home.message.image_saved.description', { number: String(message.number).padStart(2, '0') }),
       }
     case 'fact':
       return { title: i18n.t('home.fact.title'), description: dailyFactAdapter(message.steps, message.fact) }

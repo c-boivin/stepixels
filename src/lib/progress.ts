@@ -135,3 +135,17 @@ function getFinishedAt(image: ProgressImage, validations: readonly TimedValidati
   }
   return null
 }
+
+/**
+ * Whether image `number` may be unlocked (#35): the image before it exists and every one of its
+ * cells is revealed by these validations.
+ */
+export function canUnlockImage(images: readonly ProgressImage[], validations: readonly ProgressValidation[], number: number): boolean {
+  const previous = images.find((image) => image.number === number - 1)
+  if (previous === undefined) return false
+
+  const revealed = validations
+    .filter(({ imageNumber }) => imageNumber === previous.number)
+    .reduce((sum, { pixels }) => sum + pixels, 0)
+  return revealed >= previous.cells.length
+}

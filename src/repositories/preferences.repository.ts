@@ -21,6 +21,7 @@ const KEYS = {
   unlockedImage: 'stepixels.unlocked_image',
   unlockedAt: 'stepixels.unlocked_at',
   factChoice: 'stepixels.fact_choice',
+  savedImage: 'stepixels.saved_image',
 }
 
 /** The last image the user can reveal (#31), and when it was unlocked. */
@@ -173,16 +174,36 @@ export const preferencesRepository = {
     return { number, unlockedAt: unlockedAt !== null && Number.isFinite(unlockedAt.getTime()) ? unlockedAt : null }
   },
 
+  /** The image unlocked by creating an account (#35): its message says "IMAGE SAUVEGARDÉE". */
+  async getSavedImage(): Promise<number | null> {
+    const number = Number(await AsyncStorage.getItem(KEYS.savedImage))
+    return Number.isInteger(number) && number > 0 ? number : null
+  },
+
+  async setSavedImage(number: number) {
+    await AsyncStorage.setItem(KEYS.savedImage, String(number))
+  },
+
+  /**
+   * Unlocks an image because the guest created an account or signed in to keep the previous one
+   * (#35). Its message says "IMAGE SAUVEGARDÉE" only if it was not unlocked yet.
+   */
+  async unlockSavedImage(number: number) {
+    if (await this.unlockImage(number)) await this.setSavedImage(number)
+  },
+
   /**
    * Unlocks the image `number` (`SUIVANT` on a finished image, #31). Never goes back: a second tap
    * on `SUIVANT`, while the screen is read again, does not unlock the image after it.
+   * Returns whether the image was unlocked now.
    */
-  async unlockImage(number: number, at = new Date()) {
-    if ((await this.getUnlockedImage()).number >= number) return
+  async unlockImage(number: number, at = new Date()): Promise<boolean> {
+    if ((await this.getUnlockedImage()).number >= number) return false
 
     await AsyncStorage.multiSet([
       [KEYS.unlockedImage, String(number)],
       [KEYS.unlockedAt, at.toISOString()],
     ])
+    return true
   },
 }
