@@ -58,11 +58,16 @@ export function SignUp({ onSubmit, onSignIn, onBack }: SignUpProps) {
     if (!valid || sendingNow.current) return
     sendingNow.current = true
     setSending(true)
-    const result = await onSubmit(form)
-    // on success the screen leaves: only an error comes back here
-    setError(result)
-    sendingNow.current = false
-    setSending(false)
+    try {
+      // on success the screen leaves: only an error comes back here
+      setError(await onSubmit(form))
+    } catch {
+      // the screen's action failed after sending: say so rather than nothing
+      setError('unknown')
+    } finally {
+      sendingNow.current = false
+      setSending(false)
+    }
   }
 
   return (
