@@ -69,3 +69,29 @@ describe('formatDistance', () => {
     expect(formatDistance(steps)).toBe(distance)
   })
 })
+
+describe('the fact of the day (#32)', () => {
+  const nextReset = new Date('2026-11-26T19:00:00.000Z')
+
+  it('writes the fact of the day from the steps shown (4 230 steps → 3,2 km → 9,7 times)', () => {
+    const day = homeDayAdapter({
+      stepsAccess: 'granted',
+      stepsToValidate: 4230,
+      message: { kind: 'fact', fact: { landmark: 'eiffel', kind: 'times' }, steps: 4230 },
+      nextReset,
+    })
+
+    expect(day.message).toEqual({ title: 'LE SAVIEZ-VOUS ?', description: 'Tes 3,2 km, c’est 9,7 fois la tour Eiffel.' })
+  })
+
+  it('writes a distance that rounds to 10 km without decimal (13 300 steps = 9,975 km → 10 km)', () => {
+    const day = homeDayAdapter({
+      stepsAccess: 'granted',
+      stepsToValidate: 13_300,
+      message: { kind: 'fact', fact: { landmark: 'versailles', kind: 'percent' }, steps: 13_300 },
+      nextReset,
+    })
+
+    expect(day.message?.description).toBe('Tes 10 km, c’est 59 % d’un Paris → Versailles.')
+  })
+})

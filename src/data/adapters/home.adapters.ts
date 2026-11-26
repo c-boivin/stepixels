@@ -1,8 +1,10 @@
+import { dailyFactAdapter } from '~/data/adapters/facts.adapters'
 import { i18n } from '~/lib/i18n'
 import { METERS_PER_STEP } from '~/lib/rules'
 
 import type { HomeDayParams, HomeMessageParams, HomeRevealParams } from '~/components/views/Home'
 import type { HomeFinishedModalParams } from '~/components/views/Home/HomeFinishedModal'
+import type { Fact } from '~/lib/facts'
 import type { StepsAccess } from '~/lib/steps'
 
 // French thousands separator: 1230 → "1 230"
@@ -21,6 +23,8 @@ export type HomeMessageRaw =
   | { kind: 'validated'; steps: number }
   /** An image was unlocked, and nothing was validated since (#31). */
   | { kind: 'new_image'; number: number }
+  /** "Le saviez-vous ?" (#32): the fact of the day, when nothing else has to be said. */
+  | { kind: 'fact'; fact: Fact; steps: number }
 
 export interface HomeDayRaw {
   /** Access to the phone's steps: when it is not `granted`, the steps are `null`. */
@@ -62,6 +66,8 @@ function homeMessageAdapter(message: HomeMessageRaw): HomeMessageParams {
         title: i18n.t('home.message.validated.title'),
         description: i18n.t('home.message.validated.description', { steps: COUNT_FORMAT.format(message.steps) }),
       }
+    case 'fact':
+      return { title: i18n.t('home.fact.title'), description: dailyFactAdapter(message.steps, message.fact) }
     case 'new_image':
       return {
         title: i18n.t('home.message.new_image.title'),

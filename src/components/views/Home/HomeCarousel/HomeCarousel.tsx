@@ -28,6 +28,8 @@ export interface HomeCarouselItemParams extends PixelGridParams {
   tag: string | null
   /** Steps of a finished image (`25 600`), `null` otherwise. */
   steps: string | null
+  /** "Le saviez-vous ?" about a finished image (#32), `null` otherwise. */
+  fact: string | null
   /** Everything the card shows, read as one sentence by the screen reader. */
   summary: string
   /** The reveal animation runs on this card (#29): an orange line instead of the next pixel. */

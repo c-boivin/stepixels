@@ -6,6 +6,7 @@ import { Button } from '~/components/ui/Button'
 import { TopBar } from '~/components/ui/TopBar'
 import { HomeCarousel } from './HomeCarousel'
 import { HomeFinishedModal } from './HomeFinishedModal'
+import { HomeMessage } from './HomeMessage'
 
 import { useCountdown } from '~/hooks/useCountdown'
 import { useReduceMotion } from '~/hooks/useReduceMotion'
@@ -126,10 +127,17 @@ export function Home({
   const items = revealing === null ? images : images.map((item) => revealedItem(item, revealing.reveal, progress))
   const inFront = items[index]
   const shownCounter = revealing === null ? counter : revealing.reveal.counterAt(progress)
+  // one message at a time: the reveal, a finished image the user swiped to (its own fact, which
+  // needs no steps), the steps cannot be read, then the message of the day ("IMAGE TERMINÉE",
+  // "DOMMAGE", "VALIDÉ", the fact #32)
   const shownMessage: HomeMessageParams | null =
-    revealing === null
-      ? message
-      : { title: i18n.t('home.message.revealing.title'), description: i18n.t('home.message.revealing.description') }
+    revealing !== null
+      ? { title: i18n.t('home.message.revealing.title'), description: i18n.t('home.message.revealing.description') }
+      : browsed !== null && inFront.fact !== null
+        ? { title: i18n.t('home.fact.title'), description: inFront.fact }
+        : stepsAccess !== 'granted' && unlock === null
+          ? { title: i18n.t('home.steps_access.title'), description: i18n.t('home.steps_access.description') }
+          : message
 
   function onValidatePress() {
     if (reveal === null || revealing !== null || !onValidate()) return
@@ -168,23 +176,7 @@ export function Home({
         </View>
 
         <View style={STYLES.message}>
-          {/* the "Le saviez-vous ?" fact (#32) takes this place when there is no loss to show */}
-          {stepsAccess !== 'granted' && unlock === null && (
-            <View accessible style={STYLES.messageContent}>
-              <Text style={[TYPO.overline12, { color: colors.accentText }]}>
-                {i18n.t('home.steps_access.title')}
-              </Text>
-              <Text style={[TYPO.fact17, STYLES.centered, { color: colors.text }]}>
-                {i18n.t('home.steps_access.description')}
-              </Text>
-            </View>
-          )}
-          {(stepsAccess === 'granted' || unlock !== null) && shownMessage !== null && (
-            <View accessible style={STYLES.messageContent}>
-              <Text style={[TYPO.overline12, { color: colors.accentText }]}>{shownMessage.title}</Text>
-              <Text style={[TYPO.fact17, STYLES.centered, { color: colors.text }]}>{shownMessage.description}</Text>
-            </View>
-          )}
+          <HomeMessage message={shownMessage} />
         </View>
       </View>
 
@@ -273,7 +265,6 @@ function revealedItem(item: HomeCarouselItemParams, reveal: HomeRevealParams, pr
 
 const STYLES = StyleSheet.create({
   screen: { flex: 1 },
-  centered: { textAlign: 'center' },
   // centered with a maximum width, so the layout does not stretch on a tablet
   top: {
     width: '100%',
@@ -283,17 +274,14 @@ const STYLES = StyleSheet.create({
     gap: 24,
     paddingHorizontal: 20,
   },
+  // 10 between the title and the number, as in Figma ("Bloc chiffre")
   counter: {
     alignItems: 'center',
-    gap: 24,
+    gap: 10,
   },
   message: {
     minHeight: MESSAGE_MIN_HEIGHT,
     alignSelf: 'stretch',
-  },
-  messageContent: {
-    alignItems: 'center',
-    gap: 12,
   },
   content: {
     flex: 1,
