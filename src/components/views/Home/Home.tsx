@@ -82,6 +82,8 @@ export interface HomeProps extends HomeDayParams {
   onDayEnd: () => void
   /** Called after the user answered the steps access dialog: the steps must be read again. */
   onStepsAccessChange: () => void
+  /** Called when the pixels of a validation have finished appearing (#55: the reminder question comes after them). */
+  onRevealEnd?: () => void
   /** Called on the gear of the top bar: opens the settings (#37). No gear until the settings screen exists. */
   onSettingsPress?: () => void
 }
@@ -104,6 +106,7 @@ export function Home({
   onUnlock,
   onDayEnd,
   onStepsAccessChange,
+  onRevealEnd,
   onSettingsPress,
 }: HomeProps) {
   const colors = useColors()
@@ -115,6 +118,7 @@ export function Home({
   const progress = useTimeline(revealing?.run ?? null, () => {
     setFinished(revealing?.reveal.finished ?? null)
     setRevealing(null)
+    onRevealEnd?.()
   })
 
   // the image being revealed; else the finished image waiting for `SUIVANT`, or the last one

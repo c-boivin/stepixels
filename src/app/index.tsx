@@ -1,5 +1,6 @@
 import { Redirect, useRouter } from 'expo-router'
-import { Suspense, use, useState } from 'react'
+import { Suspense, use, useEffect, useState } from 'react'
+import { Alert } from 'react-native'
 
 import { Home, type HomeDayParams, type HomeRevealParams } from '~/components/views/Home'
 import { Launch } from '~/components/views/Launch'
@@ -12,6 +13,7 @@ import { getHomePage } from '~/data/get-home-page'
 import { i18n } from '~/lib/i18n'
 import { backupRepository } from '~/repositories/backup.repository'
 import { preferencesRepository } from '~/repositories/preferences.repository'
+import { remindersRepository } from '~/repositories/reminders.repository'
 import { validationsRepository } from '~/repositories/validations.repository'
 
 import type { ErrorBoundaryProps } from 'expo-router'
@@ -76,6 +78,12 @@ function FirstScreen({ page, onChange, onSaved }: FirstScreenProps) {
   // time of the last saved validation: data read before it would save the same steps again
   const [savedAt, setSavedAt] = useState<number | null>(null)
 
+  // the reminders are planned again at each read (app opened or back, validation, new day):
+  // a validation removes today's reminder, a new reset time moves them (#55)
+  useEffect(() => {
+    if (home !== null) remindersRepository.plan().catch(() => {})
+  }, [home])
+
   if (failure) throw failure.error
   if (home === null) return <Redirect href="/onboarding/welcome" />
 
@@ -100,6 +108,19 @@ function FirstScreen({ page, onChange, onSaved }: FirstScreenProps) {
     return true
   }
 
+  // after the first validation, once its pixels have appeared: explain the reminder before the
+  // system asks for the permission (#55). A failure only means no reminder: the app goes on
+  function onRevealEnd() {
+    remindersRepository.shouldAsk().then((ask) => {
+      if (!ask) return
+      const answer = (accepted: boolean) => remindersRepository.answer(accepted).catch(() => {})
+      Alert.alert(i18n.t('reminder.ask.title'), i18n.t('reminder.ask.description'), [
+        { text: i18n.t('reminder.ask.later'), style: 'cancel', onPress: () => answer(false) },
+        { text: i18n.t('reminder.ask.yes'), onPress: () => answer(true) },
+      ])
+    }, () => {})
+  }
+
   function onUnlock(number: number) {
     preferencesRepository.unlockImage(number).then(onSaved, (error: unknown) => setFailure({ error }))
   }
@@ -115,6 +136,7 @@ function FirstScreen({ page, onChange, onSaved }: FirstScreenProps) {
       onUnlock={onUnlock}
       onDayEnd={onChange}
       onStepsAccessChange={onChange}
+      onRevealEnd={onRevealEnd}
       // the gear of the top bar (#65) opens the settings (#37)
       onSettingsPress={() => router.push('/settings')}
     />

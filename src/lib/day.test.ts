@@ -1,4 +1,4 @@
-import { countDays, formatCountdown, getDayStart, getDayWindows, isWorthShowingLoss } from '~/lib/day'
+import { countDays, formatCountdown, getDayStart, getDayWindows, getReminderDates, isWorthShowingLoss } from '~/lib/day'
 
 // the tests run in the Europe/Paris time zone (test/global-setup.ts): dates without an offset are French times
 const at = (iso: string) => new Date(iso)
@@ -153,5 +153,50 @@ describe('countDays', () => {
 
   it('counts no day without a validation', () => {
     expect(countDays([], '20:00')).toBe(0)
+  })
+})
+
+describe('getReminderDates', () => {
+  const base = { resetTime: '20:00', lastValidatedAt: null, days: 3 }
+
+  it('plans one reminder one hour before each of the next resets', () => {
+    expect(getReminderDates({ ...base, now: at('2026-11-26T15:00:00') })).toEqual([
+      at('2026-11-26T19:00:00'),
+      at('2026-11-27T19:00:00'),
+      at('2026-11-28T19:00:00'),
+    ])
+  })
+
+  it('leaves out today once the steps of the day are validated, and keeps tomorrow', () => {
+    const dates = getReminderDates({ ...base, now: at('2026-11-26T15:00:00'), lastValidatedAt: at('2026-11-26T14:00:00') })
+
+    expect(dates).toEqual([at('2026-11-27T19:00:00'), at('2026-11-28T19:00:00')])
+  })
+
+  it('keeps today when the last validation was the day before', () => {
+    const dates = getReminderDates({ ...base, now: at('2026-11-26T15:00:00'), lastValidatedAt: at('2026-11-25T19:30:00') })
+
+    expect(dates[0]).toEqual(at('2026-11-26T19:00:00'))
+  })
+
+  it.each([
+    ['just before the reminder: still planned', '2026-11-26T18:59:59', at('2026-11-26T19:00:00')],
+    ['at the reminder time: already passed', '2026-11-26T19:00:00', at('2026-11-27T19:00:00')],
+    ['between the reminder and the reset', '2026-11-26T19:30:00', at('2026-11-27T19:00:00')],
+  ])('%s', (_, now, first) => {
+    expect(getReminderDates({ ...base, now: at(now) })[0]).toEqual(first)
+  })
+
+  it('reminds at 23:00 the day before for a reset at midnight', () => {
+    expect(getReminderDates({ ...base, resetTime: '00:00', now: at('2026-11-26T15:00:00') })[0]).toEqual(
+      at('2026-11-26T23:00:00'),
+    )
+  })
+
+  it('stays one real hour before the reset when the clocks change', () => {
+    // clocks go back on 25 October 2026 at 03:00: the reset still comes at 07:00, the reminder at 06:00
+    const dates = getReminderDates({ ...base, resetTime: '07:00', days: 1, now: at('2026-10-24T08:00:00') })
+
+    expect(dates).toEqual([at('2026-10-25T06:00:00')])
   })
 })

@@ -1,4 +1,4 @@
-import { STEPS_PER_PIXEL } from '~/lib/rules'
+import { REMINDER_BEFORE_RESET_MS, STEPS_PER_PIXEL } from '~/lib/rules'
 
 /**
  * The game day (R4): it starts and ends at the reset time chosen by the user, not at midnight.
@@ -73,6 +73,32 @@ export function getDayStart(resetTime: string, now: Date): Date {
  */
 export function countDays(dates: readonly Date[], resetTime: string): number {
   return new Set(dates.map((date) => getDayStart(resetTime, date).getTime())).size
+}
+
+export interface ReminderDatesInput {
+  /** Reset time, `HH:MM`. */
+  resetTime: string
+  now: Date
+  /** Time of the last validation, `null` before the first one. */
+  lastValidatedAt: Date | null
+  /** Number of days planned ahead, today included. */
+  days: number
+}
+
+/**
+ * When to remind the user to validate (#55): one hour before each of the next `days` resets
+ * (20:00 → 19:00; 00:00 → 23:00 the day before). Today's reminder is left out once the day's steps
+ * are validated, or when its time has passed. One date per day, never a daily repeat: the system
+ * cannot skip one day of a repeating notification.
+ */
+export function getReminderDates({ resetTime, now, lastValidatedAt, days }: ReminderDatesInput): Date[] {
+  const dayStart = getDayStart(resetTime, now)
+  const validatedToday = lastValidatedAt !== null && lastValidatedAt >= dayStart
+
+  return Array.from({ length: days }, (_, index) => {
+    // one real hour before the reset, also on a day when the clocks change
+    return new Date(shiftDay(dayStart, index + 1, resetTime).getTime() - REMINDER_BEFORE_RESET_MS)
+  }).filter((date, index) => !(index === 0 && validatedToday) && date > now)
 }
 
 /** Time left before `target`, as `HH:MM:SS` (`06:12:40`); `00:00:00` once it has passed. */

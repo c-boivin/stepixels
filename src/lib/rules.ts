@@ -15,5 +15,14 @@ export const RESET_TIMES: readonly string[] = Array.from({ length: 48 }, (_, ind
   return `${hours}:${index % 2 === 0 ? '00' : '30'}`
 })
 
+/** The validation reminder comes one hour before the reset time (#55). */
+export const REMINDER_BEFORE_RESET_MS = 60 * 60 * 1000
+
+/**
+ * Number of days of reminders planned ahead (#55), planned again each time the app opens: a user
+ * who does not open the app for a week still gets them. Far under the 64 pending notifications iOS keeps.
+ */
+export const REMINDER_DAYS = 7
+
 /** Shortest password accepted for an account (#33), checked by the app before the sign-up is sent. */
 export const PASSWORD_MIN_LENGTH = 8

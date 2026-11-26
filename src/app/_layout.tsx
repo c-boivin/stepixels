@@ -16,6 +16,7 @@ import { useReduceMotion } from '~/hooks/useReduceMotion'
 import migrations from '~/db/migrations/migrations'
 import { db } from '~/lib/db'
 import { i18n } from '~/lib/i18n'
+import { setUpNotifications } from '~/lib/notifications'
 import { backupRepository } from '~/repositories/backup.repository'
 
 import type { ErrorBoundaryProps } from 'expo-router'
@@ -23,6 +24,8 @@ import type { ErrorBoundaryProps } from 'expo-router'
 // keep the native splash screen until the fonts are loaded: the launch screen needs them for its logo
 // (called in global scope, as the Expo docs advise)
 SplashScreen.preventAutoHideAsync()
+// a reminder (#55) that arrives while the app is open shows as a banner too
+setUpNotifications()
 
 export default function RootLayout() {
   // the keys are the fontFamily names used in TYPO (src/styles/theme.ts)

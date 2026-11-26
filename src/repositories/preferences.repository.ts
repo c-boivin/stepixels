@@ -16,6 +16,7 @@ const KEYS = {
   resetTime: 'stepixels.reset_time',
   communityTotal: 'stepixels.community_total',
   stepsAccessAsked: 'stepixels.steps_access_asked',
+  reminderAsked: 'stepixels.reminder_asked',
   accountEmail: 'stepixels.account_email',
   restorePendingSince: 'stepixels.restore_pending_since',
   unlockedImage: 'stepixels.unlocked_image',
@@ -159,6 +160,15 @@ export const preferencesRepository = {
 
   async setStepsAccessAsked(asked: boolean) {
     await AsyncStorage.setItem(KEYS.stepsAccessAsked, String(asked))
+  },
+
+  /** Whether the user already answered the reminder question (#55): it is asked only once in V1. */
+  async getReminderAsked(): Promise<boolean> {
+    return (await AsyncStorage.getItem(KEYS.reminderAsked)) === 'true'
+  },
+
+  async setReminderAsked(asked: boolean) {
+    await AsyncStorage.setItem(KEYS.reminderAsked, String(asked))
   },
 
   /** The last unlocked image; the first one on a first launch, or if the stored value is unreadable. */

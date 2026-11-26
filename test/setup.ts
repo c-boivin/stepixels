@@ -52,3 +52,15 @@ jest.mock('expo-secure-store', () => {
     },
   }
 })
+
+// local notifications (src/lib/notifications.ts): nothing is planned, each test sets the permission
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { HIGH: 6 },
+  SchedulableTriggerInputTypes: { DATE: 'date' },
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn(async () => ({ granted: false, canAskAgain: true })),
+  requestPermissionsAsync: jest.fn(),
+  setNotificationChannelAsync: jest.fn(),
+  cancelAllScheduledNotificationsAsync: jest.fn(),
+  scheduleNotificationAsync: jest.fn(),
+}))

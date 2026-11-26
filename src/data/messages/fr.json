@@ -258,5 +258,18 @@
     "sign_out": "Se déconnecter",
     "privacy": "Données et confidentialité",
     "delete_account": "Supprimer mon compte"
+  },
+  "reminder": {
+    "ask": {
+      "title": "ON TE PRÉVIENT ?",
+      "description": "Une notification 1 h avant ta remise à zéro, si tu n'as pas validé tes pas.",
+      "later": "PLUS TARD",
+      "yes": "OUI"
+    },
+    "notification": {
+      "title": "STEPIXELS",
+      "body": "Plus qu'une heure pour valider tes pas."
+    },
+    "channel_name": "Rappel de validation"
   }
 }
