@@ -34,6 +34,7 @@ jest.mock('react-native-health-connect', () => ({
   getGrantedPermissions: jest.fn(),
   requestPermission: jest.fn(),
   aggregateRecord: jest.fn(),
+  openHealthConnectSettings: jest.fn(),
 }))
 
 // SecureStore keeps the Supabase session in the phone's keychain: here, an in-memory store

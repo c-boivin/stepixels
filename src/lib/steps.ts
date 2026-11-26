@@ -1,3 +1,5 @@
+import { Linking } from 'react-native'
+
 // Step source shared by every screen (ADR-005).
 // Metro picks the platform file: `steps.ios.ts` on iOS, `steps.android.ts` on Android.
 // This file is the fallback for the other platforms (web): there is no step source there.
@@ -30,4 +32,9 @@ export async function requestStepsAccess(): Promise<StepsAccess> {
  */
 export async function getStepsSince(start: Date): Promise<number> {
   throw new Error('No step source on this platform')
+}
+
+/** Opens the settings where the user can allow the steps, for a `blocked` access. */
+export async function openStepsSettings(): Promise<void> {
+  await Linking.openSettings()
 }

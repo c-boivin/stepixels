@@ -168,3 +168,17 @@ Native modules do not run in Jest, which runs on the computer (Node): `test/setu
 - `better-sqlite3` and `esbuild` (used by `drizzle-kit`) run a script when installed: they are allowed in `pnpm-workspace.yaml` (`allowBuilds`). Any other package asking to run one is refused until the team agrees.
 - `better-sqlite3` is SQLite on the computer, not `expo-sqlite`: a difference between the two is only seen on the phone.
 - No coverage target yet: 80 % on `src/lib/` is set with the business rules tests (OQ-23).
+
+## Step access: a phone with no step source is not supported
+
+**Rule.** The onboarding 4/4 (pedometer) reads the step access with `getStepsAccess()` (`src/lib/steps.ts`, ADR-005). When the phone has **no step source** (no motion sensor on iOS, Health Connect missing or out of date on Android), the access is `blocked`: the screen shows the button that opens the settings, as after a refusal. There is no special screen for this case in V1.
+
+**Why.** It should not happen on the phones we target: every recent iPhone has the motion sensor, and Health Connect is built into Android 14 and later, the minimum version we support (ADR-005). It never happens on our demo phones (iPhone and Samsung S22). A special screen would be extra texts, design and tests for a case the jury will not see.
+
+**Rejected.**
+
+- A "Your phone cannot count your steps" screen: clearer for the user, but not needed for the P0. To add if the app is used on more phones.
+
+**Limits.**
+
+- On a phone with no step source, the user stays on the onboarding 4/4: the settings button does not help, and the app cannot be used.

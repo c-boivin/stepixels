@@ -47,8 +47,8 @@ export function useColors(): Colors {
 export const TYPO = Object.freeze({
   /** Pixel/Chiffre 80: daily step counter. */
   number80: { fontFamily: 'Silkscreen', fontSize: 80, lineHeight: 80 },
-  /** Pixel/Heure 64: chosen reveal time. */
-  hour64: { fontFamily: 'Silkscreen', fontSize: 64 },
+  /** Pixel/Heure 64: chosen reveal time. Line height = font size, as in Figma: without it iOS adds space and the time is not centered. */
+  hour64: { fontFamily: 'Silkscreen', fontSize: 64, lineHeight: 64 },
   /** Pixel/Titre écran 40: screen titles. */
   screenTitle40: { fontFamily: 'Silkscreen', fontSize: 40, lineHeight: 44 },
   /** Pixel/Logo 32: logo on the loading screen. */

@@ -3,6 +3,7 @@ import {
   getGrantedPermissions,
   getSdkStatus,
   initialize,
+  openHealthConnectSettings,
   requestPermission,
   SdkAvailabilityStatus,
 } from 'react-native-health-connect'
@@ -52,6 +53,11 @@ export async function getStepsSince(start: Date): Promise<number> {
     },
   })
   return result.COUNT_TOTAL
+}
+
+export async function openStepsSettings(): Promise<void> {
+  // the permission lives in Health Connect, not in the app's Android settings
+  openHealthConnectSettings()
 }
 
 /**

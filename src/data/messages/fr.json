@@ -41,6 +41,29 @@
       "description": "Tous les 100 pas, une case\nde l’image se révèle.",
       "button": "CONTINUER",
       "button_value": "→"
+    },
+    "time": {
+      "step": "3 / 4",
+      "step_label": "Étape 3 sur 4",
+      "wheel_label": "Heure de remise à zéro",
+      "title": "TON HEURE",
+      "description": "Le moment où ton compteur\nse remet à zéro.",
+      "button": "CONTINUER",
+      "button_value": "→"
+    },
+    "pedometer": {
+      "step": "4 / 4",
+      "step_label": "Étape 4 sur 4",
+      "loading": "Vérification de l’accès au podomètre",
+      "title": "TON PODOMÈTRE\nFAIT LE RESTE",
+      "description": "Ton téléphone compte déjà tes pas.\nOn lit juste ce compteur.",
+      "denied_title": "ON A BESOIN\nDE TES PAS",
+      "denied_description": "Juste le nombre, rien d’autre.\nSans lui, rien ne se révèle.",
+      "allow_button": "AUTORISER LE PODOMÈTRE",
+      "settings_button": "OUVRIR LES RÉGLAGES",
+      "settings_hint": "Ouvre les réglages du téléphone pour autoriser la lecture des pas",
+      "button_value": "→",
+      "connected": "PODOMÈTRE\nCONNECTÉ"
     }
   }
 }

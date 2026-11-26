@@ -5,3 +5,9 @@
 
 /** Steps needed to reveal one pixel, that is one cell of an image (R1). */
 export const STEPS_PER_PIXEL = 100
+
+/** Reset times the user can pick (R4), `HH:MM`: from 00:00 to 23:30, every 30 minutes. */
+export const RESET_TIMES: readonly string[] = Array.from({ length: 48 }, (_, index) => {
+  const hours = String(Math.floor(index / 2)).padStart(2, '0')
+  return `${hours}:${index % 2 === 0 ? '00' : '30'}`
+})
