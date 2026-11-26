@@ -11,3 +11,6 @@ export const RESET_TIMES: readonly string[] = Array.from({ length: 48 }, (_, ind
   const hours = String(Math.floor(index / 2)).padStart(2, '0')
   return `${hours}:${index % 2 === 0 ? '00' : '30'}`
 })
+
+/** Shortest password accepted for an account (#33), checked by the app before the sign-up is sent. */
+export const PASSWORD_MIN_LENGTH = 8

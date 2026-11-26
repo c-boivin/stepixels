@@ -12,28 +12,35 @@ export interface ButtonProps {
   accessibilityHint?: string
   /** `primary` (default): orange. `secondary`: outlined, on the background (`REVENIR À L’IMAGE EN COURS`). */
   variant?: 'primary' | 'secondary'
+  /** Beige with gray text, and does nothing when pressed (a form not filled yet, or being sent). */
+  disabled?: boolean
 }
 
 /** The button of the design: full width, 56 high (Figma component "Bouton"), orange or outlined. */
-export function Button({ label, value, onPress, accessibilityHint, variant = 'primary' }: ButtonProps) {
+export function Button({ label, value, onPress, accessibilityHint, variant = 'primary', disabled = false }: ButtonProps) {
   const colors = useColors()
+  const textColor = disabled ? colors.muted : colors.text
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         STYLES.button,
         value !== undefined && STYLES.withValue,
-        variant === 'primary'
-          ? { backgroundColor: colors.accent }
-          : [STYLES.secondary, { backgroundColor: colors.background, borderColor: colors.text }],
+        disabled
+          ? { backgroundColor: colors.control }
+          : variant === 'primary'
+            ? { backgroundColor: colors.accent }
+            : [STYLES.secondary, { backgroundColor: colors.background, borderColor: colors.text }],
         pressed && STYLES.pressed,
       ]}>
-      <Text style={[TYPO.button14, { color: colors.text }]}>{label}</Text>
-      {value !== undefined && <Text style={[TYPO.button14, { color: colors.text }]}>{value}</Text>}
+      <Text style={[TYPO.button14, { color: textColor }]}>{label}</Text>
+      {value !== undefined && <Text style={[TYPO.button14, { color: textColor }]}>{value}</Text>}
     </Pressable>
   )
 }
