@@ -1,2 +1,2 @@
 export { HomeMessage } from './HomeMessage'
-export type { HomeMessageProps } from './HomeMessage'
+export type { HomeMessageParams, HomeMessageProps } from './HomeMessage'

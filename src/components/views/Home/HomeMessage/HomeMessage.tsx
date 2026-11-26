@@ -9,9 +9,16 @@ import { TYPO, useColors } from '~/styles/theme'
 const FADE_OUT_MS = 120
 const FADE_IN_MS = 180
 
+/** The message above the carousel: an overline and a sentence. */
+export interface HomeMessageParams {
+  /** `LE SAVIEZ-VOUS ?`, `DOMMAGE`, `VALIDÉ`, `NOUVELLE IMAGE`, `IMAGE TERMINÉE` */
+  title: string
+  description: string
+}
+
 export interface HomeMessageProps {
-  /** `LE SAVIEZ-VOUS ?`, `DOMMAGE`… and its sentence; `null`: the block stays empty, and keeps its place. */
-  message: { title: string; description: string } | null
+  /** `null`: the block stays empty, and keeps its place. */
+  message: HomeMessageParams | null
 }
 
 /**

@@ -17,7 +17,7 @@ const GAP = 16
 const NEIGHBOUR_OPACITY = 0.75
 
 /** From the center of one card to the next, for a card of this side: the carousel snaps every slot. */
-export function carouselSlot(card = CAROUSEL_CARD): number {
+function carouselSlot(card = CAROUSEL_CARD): number {
   return card / 2 + GAP + (card * NEIGHBOUR_SCALE) / 2
 }
 

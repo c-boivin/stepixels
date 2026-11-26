@@ -28,7 +28,10 @@ export interface Fact {
   kind: 'times' | 'percent' | 'whole' | 'half'
 }
 
-/** The messages of each tier, by steps of the day (from the Figma table). */
+/**
+ * The messages of each tier, by steps not validated (from the Figma table). The last tier starts at
+ * 23 000 steps (17,25 km): from there, "un Paris → Versailles" and "la moitié de la Manche" are true.
+ */
 const TIERS: { from: number; facts: Fact[] }[] = [
   {
     from: 2_000,
@@ -55,7 +58,7 @@ const TIERS: { from: number; facts: Fact[] }[] = [
     ],
   },
   {
-    from: 20_000,
+    from: 23_000,
     facts: [
       { landmark: 'versailles', kind: 'whole' },
       { landmark: 'channel', kind: 'half' },
@@ -72,7 +75,7 @@ export function distanceMeters(steps: number): number {
   return steps * STEP_LENGTH_M
 }
 
-/** Tier of the steps of the day (0 to 3), `null` under 2 000 steps: no message then. */
+/** Tier of the steps not validated (0 to 3), `null` under 2 000 steps: no message then. */
 export function factTier(steps: number): number | null {
   const tier = TIERS.findLastIndex(({ from }) => steps >= from)
   return tier >= 0 ? tier : null

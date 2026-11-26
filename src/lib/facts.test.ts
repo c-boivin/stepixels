@@ -12,8 +12,8 @@ describe('factTier', () => {
     [5_000, 1],
     [9_999, 1],
     [10_000, 2],
-    [19_999, 2],
-    [20_000, 3],
+    [22_999, 2],
+    [23_000, 3],
     [80_000, 3],
   ])('%i steps → tier %s', (steps, tier) => {
     expect(factTier(steps)).toBe(tier)

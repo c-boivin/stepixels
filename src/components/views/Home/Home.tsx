@@ -17,6 +17,7 @@ import { openStepsSettings, requestStepsAccess, type StepsAccess } from '~/lib/s
 
 import type { HomeCarouselItemParams } from './HomeCarousel'
 import type { HomeFinishedModalParams } from './HomeFinishedModal'
+import type { HomeMessageParams } from './HomeMessage'
 import type { TimelineRun } from '~/hooks/useTimeline'
 
 import { TYPO, useColors } from '~/styles/theme'
@@ -30,13 +31,6 @@ const MESSAGE_MIN_HEIGHT = 68
 const REVEAL_MS_PER_PIXEL = 40
 const REVEAL_MIN_MS = 1500
 const REVEAL_MAX_MS = 3000
-
-/** The message above the carousel: an overline and a sentence. */
-export interface HomeMessageParams {
-  /** `DOMMAGE`, `VALIDÉ`, `NOUVELLE IMAGE`, `IMAGE TERMINÉE` */
-  title: string
-  description: string
-}
 
 /** Space between the carousel and the image title, and the title's line (Figma). */
 const CAROUSEL_GAP = 28
