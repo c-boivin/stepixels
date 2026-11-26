@@ -46,11 +46,12 @@ export default function SignOutPage() {
       const local = validationsRepository.getLastValidatedAt()
       const kept = await preferencesRepository.getLastValidatedAt()
       if (local !== null && (kept === null || local > kept)) await preferencesRepository.setLastValidatedAt(local)
-      validationsRepository.clear()
       // the images unlocked by SUIVANT belong to the account: the guest starts again on image 01
       await preferencesRepository.forgetUnlockedImage()
       // a restore still due belongs to the account that leaves
       await preferencesRepository.setRestorePendingSince(null)
+      // the progress leaves the phone last: if a write above fails, it stays here
+      validationsRepository.clear()
       await authRepository.signOut()
     } catch (error) {
       // the phone may be empty while the account is still signed in: its progress comes back at

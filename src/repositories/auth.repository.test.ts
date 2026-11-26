@@ -1,13 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js'
 
-import { supabase } from '~/lib/supabase'
+import { removeStoredSession, supabase } from '~/lib/supabase'
 import { authRepository, toAccountError } from '~/repositories/auth.repository'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 
 // the Supabase client needs the .env keys and the network: only its answers matter here
 jest.mock('~/lib/supabase', () => ({
   supabase: { auth: { signUp: jest.fn(), signInWithPassword: jest.fn(), getSession: jest.fn(), signOut: jest.fn() } },
+  removeStoredSession: jest.fn().mockResolvedValue(undefined),
 }))
 
 const SESSION = { access_token: 'token' }
@@ -127,14 +128,30 @@ describe('authRepository', () => {
     expect(await preferencesRepository.getAccountEmail()).toBeNull()
   })
 
-  it('does not wait for a server that never answers', async () => {
-    jest.useFakeTimers()
-    jest.mocked(supabase.auth.signOut).mockReturnValue(new Promise(() => {}) as never)
+  describe('on a slow network', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      jest.mocked(removeStoredSession).mockClear().mockResolvedValue(undefined)
+    })
+    afterEach(() => jest.useRealTimers())
 
-    const signOut = authRepository.signOut()
-    await jest.advanceTimersByTimeAsync(2_000)
+    it('does not wait for a server that never answers, and removes the session itself', async () => {
+      jest.mocked(supabase.auth.signOut).mockReturnValue(new Promise(() => {}) as never)
 
-    await expect(signOut).resolves.toBeUndefined()
-    jest.useRealTimers()
+      const signOut = authRepository.signOut()
+      await jest.advanceTimersByTimeAsync(2_000)
+
+      await expect(signOut).resolves.toBeUndefined()
+      expect(removeStoredSession).toHaveBeenCalled()
+    })
+
+    it('leaves the session to Supabase when it answers in time, with no timer left', async () => {
+      jest.mocked(supabase.auth.signOut).mockResolvedValue({ error: null } as never)
+
+      await authRepository.signOut()
+
+      expect(removeStoredSession).not.toHaveBeenCalled()
+      expect(jest.getTimerCount()).toBe(0)
+    })
   })
 })

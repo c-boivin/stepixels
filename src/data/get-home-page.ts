@@ -31,7 +31,7 @@ export async function getHomePage(): Promise<HomePageData> {
 
   const now = new Date()
   const allValidations = validationsRepository.getAll()
-  const [resetTime, startedAt, unlocked, savedImage, email] = await Promise.all([
+  const [resetTime, startedAt, unlocked, savedImage, email, keptValidatedAt] = await Promise.all([
     preferencesRepository.getResetTime(),
     // an install that finished the onboarding before the start date was saved gets it now
     preferencesRepository.getStartedAt().then((date) => date ?? preferencesRepository.setStartedAt(now)),
@@ -40,13 +40,14 @@ export async function getHomePage(): Promise<HomePageData> {
     // a guest's SUIVANT asks for an account first (#35); a broken session must not hide the
     // images (ADR-004, offline first): the e-mail kept at sign-in is used instead
     authRepository.getEmail().catch(() => preferencesRepository.getAccountEmail()),
+    // after a sign-out, the validations left the phone but their time is kept (#41)
+    preferencesRepository.getLastValidatedAt(),
   ])
   const lastValidation = getLastValidation(allValidations)
   const { counter, lost, nextReset } = getDayWindows({
     resetTime,
     now,
-    // after a sign-out, the validations left the phone but their time is kept (#41)
-    lastValidatedAt: latestOf(lastValidation?.validatedAt ?? null, await preferencesRepository.getLastValidatedAt()),
+    lastValidatedAt: latestOf(lastValidation?.validatedAt ?? null, keptValidatedAt),
     startedAt,
   })
 

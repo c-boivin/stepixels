@@ -1,6 +1,6 @@
 import { isAuthApiError, isAuthRetryableFetchError } from '@supabase/supabase-js'
 
-import { supabase } from '~/lib/supabase'
+import { removeStoredSession, supabase } from '~/lib/supabase'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 
 /**
@@ -95,11 +95,24 @@ export const authRepository = {
    * when it can be reached. Never throws.
    */
   async signOut(): Promise<void> {
-    // the local session is removed before the request; on a slow network, the request to the
-    // server is not waited for more than SIGN_OUT_WAIT_MS
-    const request = supabase.auth.signOut({ scope: 'local' }).catch(() => {})
-    await Promise.race([request, new Promise((resolve) => setTimeout(resolve, SIGN_OUT_WAIT_MS))])
-    await preferencesRepository.setAccountEmail(null)
+    // on a slow network, the request to the server is not waited for more than SIGN_OUT_WAIT_MS
+    const request = supabase.auth.signOut({ scope: 'local' }).then(
+      () => true,
+      () => true,
+    )
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const answered = await Promise.race([
+      request,
+      new Promise<false>((resolve) => {
+        timer = setTimeout(() => resolve(false), SIGN_OUT_WAIT_MS)
+      }),
+    ])
+    clearTimeout(timer)
+    // Supabase first refreshes an expired session over the network, and only then removes it: until
+    // then, a send would still go to this account. So the session leaves the phone now
+    if (!answered) await removeStoredSession().catch(() => {})
+    // signed out already: a failed write only keeps an e-mail that a guest never reads
+    await preferencesRepository.setAccountEmail(null).catch(() => {})
   },
 
   async signIn({ email, password }: SignInForm): Promise<void> {
