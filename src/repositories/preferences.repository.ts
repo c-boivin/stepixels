@@ -12,6 +12,7 @@ const KEYS = {
   resetTime: 'stepixels.reset_time',
   communityTotal: 'stepixels.community_total',
   stepsAccessAsked: 'stepixels.steps_access_asked',
+  accountEmail: 'stepixels.account_email',
 }
 
 /**
@@ -83,6 +84,20 @@ export const preferencesRepository = {
    */
   async getStepsAccessAsked(): Promise<boolean> {
     return (await AsyncStorage.getItem(KEYS.stepsAccessAsked)) === 'true'
+  },
+
+  /**
+   * E-mail of the account signed in on this phone, kept for when Supabase cannot be reached
+   * (Settings offline). Not a secret: the session itself stays in SecureStore.
+   */
+  async getAccountEmail(): Promise<string | null> {
+    return AsyncStorage.getItem(KEYS.accountEmail)
+  },
+
+  /** `null` forgets it (sign-out). */
+  async setAccountEmail(email: string | null) {
+    if (email === null) await AsyncStorage.removeItem(KEYS.accountEmail)
+    else await AsyncStorage.setItem(KEYS.accountEmail, email)
   },
 
   async setStepsAccessAsked(asked: boolean) {

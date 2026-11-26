@@ -46,7 +46,8 @@ export function Settings({ page, onBack, onPedometerPress, onSignUp, onSignIn }:
         label={i18n.t('settings.pedometer.label')}
         value={pedometer}
         accessibilityLabel={i18n.t('settings.row_label', { label: i18n.t('settings.pedometer.label'), value: pedometer })}
-        tone="highlight"
+        // allowed in orange, refused in gray (no Figma frame for it: agreed in the review of #62)
+        tone={pedometerAction ? 'off' : 'highlight'}
         onPress={pedometerAction ? () => onPedometerPress(pedometerAction) : undefined}
         accessibilityHint={pedometerAction ? i18n.t(`settings.pedometer.hint_${pedometerAction}`) : undefined}
       />

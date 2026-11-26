@@ -1,10 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router'
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
-import { AppState } from 'react-native'
+import { Suspense, useCallback, useRef, useState } from 'react'
 
 import { Message } from '~/components/views/Message'
 import { Settings, SettingsLoading } from '~/components/views/Settings'
 
+import { useAppActive } from '~/hooks/useAppActive'
 import { useRequest } from '~/hooks/useRequest'
 
 import { getSettingsPage } from '~/data/get-settings-page'
@@ -47,12 +47,9 @@ export default function SettingsPage() {
   )
 
   // back from the phone's settings: the pedometer access may have changed
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && !asking.current) refresh()
-    })
-    return () => subscription.remove()
-  }, [refresh])
+  useAppActive(() => {
+    if (!asking.current) refresh()
+  })
 
   if (failure) throw failure.error
 

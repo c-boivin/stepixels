@@ -11,9 +11,10 @@ export interface SettingsRowProps {
    * - `default`: the value in pixel letters;
    * - `highlight`: the value in orange (`AUTORISÉ`);
    * - `quiet`: the value small and gray (the account's e-mail);
+   * - `off`: the value in gray pixel letters (`REFUSÉ`: something needs the user);
    * - `danger`: label and value in orange (`Supprimer mon compte`).
    */
-  tone?: 'default' | 'highlight' | 'quiet' | 'danger'
+  tone?: 'default' | 'highlight' | 'quiet' | 'off' | 'danger'
   /** Without it, the row is only read, not pressed. */
   onPress?: () => void
   /** Read by the screen reader instead of the label alone, when the value matters (`Accès podomètre, AUTORISÉ`). */
@@ -26,7 +27,8 @@ export interface SettingsRowProps {
 export function SettingsRow({ label, value, tone = 'default', onPress, accessibilityLabel = label, accessibilityHint }: SettingsRowProps) {
   const colors = useColors()
   const labelColor = tone === 'danger' ? colors.accentText : colors.text
-  const valueColor = tone === 'highlight' || tone === 'danger' ? colors.accentText : tone === 'quiet' ? colors.muted : colors.text
+  const valueColor =
+    tone === 'highlight' || tone === 'danger' ? colors.accentText : tone === 'quiet' || tone === 'off' ? colors.muted : colors.text
 
   const content = (
     <>

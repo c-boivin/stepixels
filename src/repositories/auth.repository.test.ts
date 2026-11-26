@@ -85,4 +85,27 @@ describe('authRepository', () => {
     jest.mocked(supabase.auth.getSession).mockResolvedValueOnce({ data: { session: null } } as never)
     expect(await authRepository.getEmail()).toBeNull()
   })
+
+  it('keeps the e-mail at sign-in, for when Supabase cannot be reached', async () => {
+    jest.mocked(supabase.auth.signInWithPassword).mockResolvedValue({ data: {}, error: null } as never)
+
+    await authRepository.signIn({ email: ' camille@exemple.fr ', password: 'motdepasse' })
+
+    expect(await preferencesRepository.getAccountEmail()).toBe('camille@exemple.fr')
+  })
+
+  it('gives the kept e-mail offline, when the expired session cannot be refreshed', async () => {
+    await preferencesRepository.setAccountEmail('camille@exemple.fr')
+    const offline = new AuthRetryableFetchError('Failed to fetch', 0)
+    jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: offline } as never)
+
+    expect(await authRepository.getEmail()).toBe('camille@exemple.fr')
+  })
+
+  it('gives no e-mail to a guest, even with an e-mail kept from an older account', async () => {
+    await preferencesRepository.setAccountEmail('camille@exemple.fr')
+    jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as never)
+
+    expect(await authRepository.getEmail()).toBeNull()
+  })
 })
