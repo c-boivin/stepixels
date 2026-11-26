@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Button } from '~/components/ui/Button'
 import { TopBar } from '~/components/ui/TopBar'
-import { HomeCarousel } from './HomeCarousel'
+import { CAROUSEL_CARD, HomeCarousel } from './HomeCarousel'
 import { HomeFinishedModal } from './HomeFinishedModal'
 import { HomeMessage } from './HomeMessage'
 
@@ -37,6 +37,12 @@ export interface HomeMessageParams {
   title: string
   description: string
 }
+
+/** Space between the carousel and the image title, and the title's line (Figma). */
+const CAROUSEL_GAP = 28
+const FOOTER_HEIGHT = 14
+/** Under this side, the pixel art would be too small to enjoy: the card stops shrinking there. */
+const CARD_MIN = 200
 
 /** The day shown on the home screen (#27, #30). */
 export interface HomeDayParams {
@@ -126,6 +132,13 @@ export function Home({
   const index = browsed ?? currentIndex
   const items = revealing === null ? images : images.map((item) => revealedItem(item, revealing.reveal, progress))
   const inFront = items[index]
+  // the card takes the room left between the message and the countdown: full size on a tall phone,
+  // smaller on a shorter one (Samsung S22), so the button at the bottom always stays on screen
+  const [carouselRoom, setCarouselRoom] = useState<number | null>(null)
+  const card =
+    carouselRoom === null
+      ? CAROUSEL_CARD
+      : Math.max(CARD_MIN, Math.min(CAROUSEL_CARD, Math.floor(carouselRoom - CAROUSEL_GAP - FOOTER_HEIGHT)))
   const shownCounter = revealing === null ? counter : revealing.reveal.counterAt(progress)
   // one message at a time: the reveal, a finished image the user swiped to (its own fact, which
   // needs no steps), the steps cannot be read, then the message of the day ("IMAGE TERMINÉE",
@@ -180,9 +193,10 @@ export function Home({
         </View>
       </View>
 
-      <View style={STYLES.content}>
+      <View style={STYLES.content} onLayout={(event) => setCarouselRoom(event.nativeEvent.layout.height)}>
         <HomeCarousel
           items={items}
+          card={card}
           index={index}
           onIndexChange={(next) => setBrowsed(next === currentIndex ? null : next)}
         />
@@ -283,10 +297,12 @@ const STYLES = StyleSheet.create({
     minHeight: MESSAGE_MIN_HEIGHT,
     alignSelf: 'stretch',
   },
+  // flexible: it takes what the top and the bottom leave, and the card fits in it
   content: {
     flex: 1,
+    minHeight: 0,
     justifyContent: 'center',
-    gap: 28,
+    gap: CAROUSEL_GAP,
   },
   footer: {
     width: '100%',
