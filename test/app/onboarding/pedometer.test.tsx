@@ -12,6 +12,8 @@ jest.mock('~/lib/steps', () => ({
   getStepsAccess: jest.fn(),
   requestStepsAccess: jest.fn(),
   openStepsSettings: jest.fn().mockResolvedValue(undefined),
+  // the home screen opened at the end reads the steps of the day
+  getStepsBetween: jest.fn().mockResolvedValue(0),
 }))
 
 const ROUTES = {

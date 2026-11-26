@@ -1,7 +1,7 @@
 import { Pedometer } from 'expo-sensors'
 import { Linking } from 'react-native'
 
-import { getStepsAccess, getStepsSince, openStepsSettings, requestStepsAccess } from '~/lib/steps.ios'
+import { getStepsAccess, getStepsBetween, getStepsSince, openStepsSettings, requestStepsAccess } from '~/lib/steps.ios'
 
 type PermissionResponse = Pedometer.PermissionResponse
 
@@ -90,5 +90,14 @@ describe('steps on iOS', () => {
     await openStepsSettings()
 
     expect(openSettings).toHaveBeenCalled()
+  })
+
+  it('returns the steps stored by the phone between two dates, for a day already over', async () => {
+    jest.mocked(Pedometer.getStepCountAsync).mockResolvedValue({ steps: 1230 })
+    const start = new Date('2026-11-24T20:00:00')
+    const end = new Date('2026-11-25T20:00:00')
+
+    expect(await getStepsBetween(start, end)).toBe(1230)
+    expect(Pedometer.getStepCountAsync).toHaveBeenCalledWith(start, end)
   })
 })

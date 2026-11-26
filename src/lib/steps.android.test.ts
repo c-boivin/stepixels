@@ -9,7 +9,7 @@ import {
   SdkAvailabilityStatus,
 } from 'react-native-health-connect'
 
-import { getStepsAccess, getStepsSince, openStepsSettings, requestStepsAccess } from '~/lib/steps.android'
+import { getStepsAccess, getStepsBetween, getStepsSince, openStepsSettings, requestStepsAccess } from '~/lib/steps.android'
 
 const READ_STEPS = { accessType: 'read', recordType: 'Steps' } as const
 
@@ -92,6 +92,20 @@ describe('steps on Android', () => {
         operator: 'between',
         startTime: '2026-11-25T00:00:00.000Z',
         endTime: expect.any(String),
+      },
+    })
+  })
+
+  it('returns the total steps between two dates, for a day already over', async () => {
+    jest.mocked(aggregateRecord).mockResolvedValue({ COUNT_TOTAL: 1230, dataOrigins: [] } as never)
+
+    expect(await getStepsBetween(new Date('2026-11-24T19:00:00Z'), new Date('2026-11-25T19:00:00Z'))).toBe(1230)
+    expect(aggregateRecord).toHaveBeenCalledWith({
+      recordType: 'Steps',
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: '2026-11-24T19:00:00.000Z',
+        endTime: '2026-11-25T19:00:00.000Z',
       },
     })
   })

@@ -1,4 +1,4 @@
-import { asc, sql } from 'drizzle-orm'
+import { asc, desc, sql } from 'drizzle-orm'
 import { randomUUID } from 'expo-crypto'
 
 import { validations } from '~/db/schema'
@@ -27,6 +27,18 @@ export const validationsRepository = {
       .from(validations)
       .orderBy(asc(validations.validatedAt), asc(sql`rowid`))
       .all()
+  },
+
+  /** Time of the last validation, `null` before the first one: the daily counter starts after it (R3). */
+  getLastValidatedAt(): Date | null {
+    const last = db
+      .select({ validatedAt: validations.validatedAt })
+      .from(validations)
+      .orderBy(desc(validations.validatedAt))
+      .limit(1)
+      .get()
+
+    return last ? new Date(last.validatedAt) : null
   },
 
   /**

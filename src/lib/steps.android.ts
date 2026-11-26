@@ -40,6 +40,10 @@ export async function requestStepsAccess(): Promise<StepsAccess> {
 }
 
 export async function getStepsSince(start: Date): Promise<number> {
+  return getStepsBetween(start, new Date())
+}
+
+export async function getStepsBetween(start: Date, end: Date): Promise<number> {
   if (!(await connect())) throw new Error('Health Connect is not available')
 
   // the aggregate removes duplicates between the apps that write steps (Samsung Health…),
@@ -49,7 +53,7 @@ export async function getStepsSince(start: Date): Promise<number> {
     timeRangeFilter: {
       operator: 'between',
       startTime: start.toISOString(),
-      endTime: new Date().toISOString(),
+      endTime: end.toISOString(),
     },
   })
   return result.COUNT_TOTAL
