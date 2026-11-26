@@ -22,9 +22,14 @@ export default function OnboardingPedometerPage() {
 
   return (
     <Suspense fallback={<OnboardingPedometerLoading />}>
-      <OnboardingPedometer page={page} onGranted={onGranted} />
+      <OnboardingPedometer page={page} readAccess={readAccess} onGranted={onGranted} />
     </Suspense>
   )
+}
+
+/** Reads the access again (back from the settings), with the same getter as the first load. */
+async function readAccess() {
+  return (await getOnboardingPedometerPage()).access
 }
 
 /** The onboarding ends when the steps can be read: the next launches open the home screen. */

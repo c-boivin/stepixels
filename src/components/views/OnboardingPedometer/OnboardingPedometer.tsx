@@ -1,12 +1,12 @@
-import { useRouter } from 'expo-router'
+import { Stack, useRouter } from 'expo-router'
 import { use, useEffect, useRef, useState } from 'react'
-import { AppState, StyleSheet, Text, View } from 'react-native'
+import { AppState, BackHandler, StyleSheet, Text, View } from 'react-native'
 
 import { Picto } from '~/components/ui/Picto'
 import { OnboardingStep } from '~/components/views/OnboardingStep'
 
 import { i18n } from '~/lib/i18n'
-import { getStepsAccess, openStepsSettings, requestStepsAccess, type StepsAccess } from '~/lib/steps'
+import { openStepsSettings, requestStepsAccess, type StepsAccess } from '~/lib/steps'
 
 import { TYPO, useColors } from '~/styles/theme'
 
@@ -16,6 +16,8 @@ export const PEDOMETER_CONNECTED_MS = 1500
 export interface OnboardingPedometerProps {
   /** The steps access when the screen opens. */
   page: Promise<{ access: StepsAccess }>
+  /** Reads the access again, back from the settings: the route loads the data (ADR-002). */
+  readAccess: () => Promise<StepsAccess>
   /** Called once the access is granted: the route marks the onboarding as done. */
   onGranted: () => Promise<void>
 }
@@ -27,13 +29,14 @@ export interface OnboardingPedometerProps {
  * - `blocked`: same texts, the button opens the settings (blocking screen: no way around it);
  * - `granted`: "Podomètre connecté", then the home screen.
  */
-export function OnboardingPedometer({ page, onGranted }: OnboardingPedometerProps) {
+export function OnboardingPedometer({ page, readAccess, onGranted }: OnboardingPedometerProps) {
   const colors = useColors()
   const router = useRouter()
   const [access, setAccess] = useState(use(page).access)
-  // an error while saving goes to the route's ErrorBoundary, like a loading error
-  const [error, setError] = useState<unknown>(null)
-  // the permission dialog sends the app to the background and back: no re-read while it is open
+  // an error goes to the route's ErrorBoundary, like a loading error (wrapped: the reason can be empty)
+  const [failure, setFailure] = useState<{ error: unknown } | null>(null)
+  // the permission dialog sends the app to the background and back: no re-read while it is open,
+  // and a second tap does not ask twice
   const asking = useRef(false)
 
   // back from the settings, the user may have allowed the steps: read the access again
@@ -41,40 +44,51 @@ export function OnboardingPedometer({ page, onGranted }: OnboardingPedometerProp
     if (access === 'granted') return
 
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && !asking.current) getStepsAccess().then(setAccess, setError)
+      if (state === 'active' && !asking.current) readAccess().then(setAccess, (error: unknown) => setFailure({ error }))
     })
     return () => subscription.remove()
-  }, [access])
+  }, [access, readAccess])
 
   useEffect(() => {
     if (access !== 'granted') return
 
     let cancelled = false
     // the onboarding is done only once the access is granted, saved before the home screen opens
-    Promise.all([onGranted(), wait(PEDOMETER_CONNECTED_MS)]).then(
-      () => {
-        if (cancelled) return
-        // the onboarding steps leave the history: "back" on the home screen does not return here
-        router.dismissAll()
-        router.replace('/')
-      },
-      (reason: unknown) => {
-        if (!cancelled) setError(reason)
-      },
-    )
+    const saved = onGranted()
+    saved.catch((error: unknown) => {
+      if (!cancelled) setFailure({ error })
+    })
+    const timer = setTimeout(() => {
+      saved.then(
+        () => {
+          if (cancelled) return
+          // the onboarding steps leave the history: "back" on the home screen does not return here
+          router.dismissAll()
+          router.replace('/')
+        },
+        () => {},
+      )
+    }, PEDOMETER_CONNECTED_MS)
+    // the onboarding is already saved: no way back to 4/4 during the pause (Android back button)
+    const back = BackHandler.addEventListener('hardwareBackPress', () => true)
+
     return () => {
       cancelled = true
+      clearTimeout(timer)
+      back.remove()
     }
   }, [access, onGranted, router])
 
-  if (error) throw error
+  if (failure) throw failure.error
 
   async function onAllow() {
+    if (asking.current) return
+
     asking.current = true
     try {
       setAccess(await requestStepsAccess())
-    } catch (reason) {
-      setError(reason)
+    } catch (error) {
+      setFailure({ error })
     } finally {
       asking.current = false
     }
@@ -83,6 +97,8 @@ export function OnboardingPedometer({ page, onGranted }: OnboardingPedometerProp
   if (access === 'granted') {
     return (
       <OnboardingStep>
+        {/* no swipe back during the pause (iOS): the onboarding is already saved */}
+        <Stack.Screen options={{ gestureEnabled: false }} />
         <View style={STYLES.content}>
           <Picto name="feet" />
           <Text
@@ -109,7 +125,7 @@ export function OnboardingPedometer({ page, onGranted }: OnboardingPedometerProp
               value: i18n.t('onboarding.pedometer.button_value'),
               accessibilityHint: i18n.t('onboarding.pedometer.settings_hint'),
               onPress: () => {
-                openStepsSettings().catch(setError)
+                openStepsSettings().catch((error: unknown) => setFailure({ error }))
               },
             }
           : {
@@ -131,10 +147,6 @@ export function OnboardingPedometer({ page, onGranted }: OnboardingPedometerProp
       </View>
     </OnboardingStep>
   )
-}
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 const STYLES = StyleSheet.create({

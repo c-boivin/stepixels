@@ -126,4 +126,18 @@ describe('onboarding pedometer route', () => {
 
     expect(await screen.findByRole('button', { name: 'AUTORISER LE PODOMÈTRE' })).toBeTruthy()
   })
+
+  it('asks only once on a double tap', async () => {
+    jest.mocked(getStepsAccess).mockResolvedValue('undetermined')
+    jest.mocked(requestStepsAccess).mockResolvedValue('refused')
+
+    await openScreen()
+    const button = await screen.findByRole('button', { name: 'AUTORISER LE PODOMÈTRE' })
+    // the second tap comes while the permission dialog is open
+    fireEvent.press(button)
+    await fireEvent.press(button)
+
+    expect(await screen.findByRole('header', { name: 'ON A BESOIN\nDE TES PAS' })).toBeTruthy()
+    expect(requestStepsAccess).toHaveBeenCalledTimes(1)
+  })
 })

@@ -32,9 +32,12 @@ const FAR_SCALE = TYPO.wheel22.fontSize / TYPO.hour64.fontSize
 export interface TimeWheelProps {
   /** The times to pick from, in order (`HH:MM`). */
   times: readonly string[]
-  /** The selected time, one of `times`. */
+  /**
+   * The selected time, one of `times`. The wheel starts on it, then follows the user's scroll:
+   * it does not move when `value` changes later, so load the value before showing the wheel.
+   */
   value: string
-  /** Called with the new time as soon as the wheel stops on it, while scrolling too. */
+  /** Called with the new time each time the wheel passes one, while scrolling too. */
   onChange: (time: string) => void
   /** What the screen reader calls the wheel ("Heure de remise à zéro"). */
   accessibilityLabel: string
@@ -42,7 +45,8 @@ export interface TimeWheelProps {
 
 /**
  * A wheel to pick a time (Figma "Sélecteur d'heure"): the selected time big and orange between two
- * lines, its neighbors smaller and faded. Controlled, like an input: the parent keeps the value. With a screen reader, it is one "adjustable" element: swipe up or down.
+ * lines, its neighbors smaller and faded. The parent keeps the value (`value` + `onChange`). With a
+ * screen reader, it is one "adjustable" element: swipe up or down.
  */
 export function TimeWheel({ times, value, onChange, accessibilityLabel }: TimeWheelProps) {
   const colors = useColors()
@@ -52,6 +56,9 @@ export function TimeWheel({ times, value, onChange, accessibilityLabel }: TimeWh
   // without a render for every pixel (same technique as the carousel of the course)
   const [scrollY] = useState(() => new Animated.Value(selectedIndex * ROW_HEIGHT))
   const list = useRef<FlatList<string>>(null)
+  // the start position only: a contentOffset that changes on each render would move the native
+  // list to the row while the finger is still scrolling it
+  const [initialOffset] = useState(() => ({ x: 0, y: selectedIndex * ROW_HEIGHT }))
 
   // a change is sent when the wheel crosses another time, not for every pixel
   function select(index: number) {
@@ -100,7 +107,7 @@ export function TimeWheel({ times, value, onChange, accessibilityLabel }: TimeWh
         keyExtractor={(time) => time}
         // 48 short rows: render them all, so the wheel can open on 20:00 at once
         initialNumToRender={times.length}
-        contentOffset={{ x: 0, y: selectedIndex * ROW_HEIGHT }}
+        contentOffset={initialOffset}
         contentContainerStyle={STYLES.content}
         showsVerticalScrollIndicator={false}
         // stop on a time: the exact snap points, more reliable on iOS than snapToInterval

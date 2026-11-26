@@ -1,4 +1,5 @@
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
+import { useCallback, useRef } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
 import { PixelLoader } from '~/components/ui/PixelLoader'
@@ -15,6 +16,21 @@ const RULE_FILLED_CELLS = 60
 export function OnboardingRule() {
   const colors = useColors()
   const router = useRouter()
+  // a double tap would open 3/4 twice; allowed again when the user comes back to this screen
+  const opening = useRef(false)
+
+  useFocusEffect(
+    useCallback(() => {
+      opening.current = false
+    }, []),
+  )
+
+  function onContinue() {
+    if (opening.current) return
+
+    opening.current = true
+    router.push('/onboarding/time')
+  }
 
   return (
     <OnboardingStep
@@ -23,7 +39,7 @@ export function OnboardingRule() {
       button={{
         label: i18n.t('onboarding.rule.button'),
         value: i18n.t('onboarding.rule.button_value'),
-        onPress: () => router.push('/onboarding/time'),
+        onPress: onContinue,
       }}>
       <View style={STYLES.content}>
         <PixelLoader filled={RULE_FILLED_CELLS} />

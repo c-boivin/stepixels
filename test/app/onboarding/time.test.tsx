@@ -82,4 +82,17 @@ describe('onboarding time route', () => {
 
     expect(await screen.findByRole('header', { name: 'TON HEURE' })).toBeTruthy()
   })
+
+  it('saves once and opens 4/4 once on a double tap', async () => {
+    const setResetTime = jest.spyOn(preferencesRepository, 'setResetTime')
+
+    await renderRouter(ROUTES, { initialUrl: '/onboarding/time' })
+    const button = screen.getByRole('button', { name: 'CONTINUER' })
+    // the second tap comes while the first one is still saving
+    fireEvent.press(button)
+    await fireEvent.press(button)
+
+    expect(await screen.findByLabelText('Étape 4 sur 4')).toBeTruthy()
+    expect(setResetTime).toHaveBeenCalledTimes(1)
+  })
 })

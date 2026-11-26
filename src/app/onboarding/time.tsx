@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { Message } from '~/components/views/Message'
 import { OnboardingTime } from '~/components/views/OnboardingTime'
@@ -15,17 +15,24 @@ import type { ErrorBoundaryProps } from 'expo-router'
  */
 export default function OnboardingTimePage() {
   const router = useRouter()
-  // an error while saving goes to the ErrorBoundary below
-  const [error, setError] = useState<unknown>(null)
+  // an error while saving goes to the ErrorBoundary below (wrapped: the reason itself can be empty)
+  const [failure, setFailure] = useState<{ error: unknown } | null>(null)
+  // a second tap while the time is saved would save twice and open 4/4 twice
+  const saving = useRef(false)
 
-  if (error) throw error
+  if (failure) throw failure.error
 
   async function onContinue(time: string) {
+    if (saving.current) return
+
+    saving.current = true
     try {
       await preferencesRepository.setResetTime(time)
       router.push('/onboarding/pedometer')
-    } catch (reason) {
-      setError(reason)
+    } catch (error) {
+      setFailure({ error })
+    } finally {
+      saving.current = false
     }
   }
 
