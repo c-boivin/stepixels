@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router'
+import { Redirect, useRouter } from 'expo-router'
 import { Suspense, use } from 'react'
 
 import { Home, type HomeDayParams } from '~/components/views/Home'
@@ -48,11 +48,21 @@ export default function HomePage() {
 
 function FirstScreen({ page, onChange }: { page: Promise<HomePageData>; onChange: () => void }) {
   const { home } = use(page)
+  const router = useRouter()
 
   if (home === null) return <Redirect href="/onboarding/welcome" />
 
   // a new day starts at the reset time: the steps are read again from it (#30)
-  return <Home images={home.images} {...home.day} onDayEnd={onChange} onStepsAccessChange={onChange} />
+  return (
+    <Home
+      images={home.images}
+      {...home.day}
+      onDayEnd={onChange}
+      onStepsAccessChange={onChange}
+      // the gear of the top bar (#65) opens the settings (#37)
+      onSettingsPress={() => router.push('/settings')}
+    />
+  )
 }
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {

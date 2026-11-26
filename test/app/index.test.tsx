@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library'
-import { AppState } from 'react-native'
+import { AppState, View } from 'react-native'
 
 import HomePage, { ErrorBoundary } from '~/app/index'
 import OnboardingWelcomePage from '~/app/onboarding/welcome'
@@ -22,7 +22,11 @@ jest.mock('~/repositories/community.repository', () => ({
 jest.mock('~/lib/steps', () => ({ getStepsBetween: jest.fn() }))
 
 // route tests live here, never in src/app/ (every file there is a route)
-const ROUTES = { index: { default: HomePage, ErrorBoundary }, 'onboarding/welcome': OnboardingWelcomePage }
+const ROUTES = {
+  index: { default: HomePage, ErrorBoundary },
+  'onboarding/welcome': OnboardingWelcomePage,
+  settings: () => <View testID="settings" />,
+}
 // the title and steps under the card are hidden from the screen reader (the card reads them)
 const HIDDEN = { includeHiddenElements: true }
 // Intl writes French thousands with a narrow no-break space (U+202F)
@@ -77,6 +81,15 @@ describe('first route', () => {
       expect(screen.getByText('NOUVELLE')).toBeTruthy()
       expect(screen.getByLabelText('02 - L’ÉTOILE, verrouillée')).toBeTruthy()
       expect(screen).toHavePathname('/')
+    })
+
+    it('opens the settings from the gear of the top bar', async () => {
+      await renderRouter(ROUTES)
+
+      await fireEvent.press(await screen.findByRole('button', { name: 'Réglages' }))
+
+      expect(await screen.findByTestId('settings')).toBeTruthy()
+      expect(screen).toHavePathname('/settings')
     })
 
     it('shows the image being revealed with the pixels of every validation', async () => {

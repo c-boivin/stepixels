@@ -63,15 +63,30 @@ export const authRepository = {
       if (error) throw error
       // no session: the Supabase project asks for an e-mail confirmation, which V1 does not handle
       if (!data.session) throw new AccountError('unknown')
+      await preferencesRepository.setAccountEmail(email.trim())
     } catch (error) {
       throw toAccountError(error)
     }
+  },
+
+  /**
+   * E-mail of the signed-in user, or `null` for a guest, from the session kept on the phone,
+   * or from the e-mail kept at sign-in when the session cannot be refreshed offline.
+   */
+  async getEmail(): Promise<string | null> {
+    const { data, error } = await supabase.auth.getSession()
+    if (data.session) return data.session.user.email ?? null
+    // offline with an expired token, Supabase cannot refresh the session it still keeps: the user
+    // is signed in all the same, so the e-mail kept at sign-in is used
+    if (error && isAuthRetryableFetchError(error)) return preferencesRepository.getAccountEmail()
+    return null
   },
 
   async signIn({ email, password }: SignInForm): Promise<void> {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
       if (error) throw error
+      await preferencesRepository.setAccountEmail(email.trim())
     } catch (error) {
       throw toAccountError(error)
     }

@@ -143,5 +143,27 @@
       "offline": "! Pas de connexion. Réessaie.",
       "unknown": "! Ça n’a pas marché. Réessaie."
     }
+  },
+  "settings": {
+    "title": "RÉGLAGES",
+    "loading": "Chargement des réglages",
+    "arrow": "→",
+    "row_label": "%{label}, %{value}",
+    "pedometer": {
+      "label": "Accès podomètre",
+      "granted": "AUTORISÉ",
+      "refused": "REFUSÉ",
+      "hint_ask": "Demande à nouveau l’accès au podomètre",
+      "hint_settings": "Ouvre les réglages du téléphone"
+    },
+    "introduction": "Revoir l’introduction",
+    "reset_time": "Heure de remise à zéro",
+    "sign_up": "Créer un compte",
+    "sign_in": "Se connecter",
+    "account": "Compte",
+    "password": "Changer le mot de passe",
+    "sign_out": "Se déconnecter",
+    "privacy": "Données et confidentialité",
+    "delete_account": "Supprimer mon compte"
   }
 }
