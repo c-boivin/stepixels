@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect, useState } from 'react'
+import { useColorScheme } from 'react-native'
 
 import { Launch, LAUNCH_MINIMUM_MS } from '~/components/views/Launch'
 import { Message } from '~/components/views/Message'
@@ -16,6 +17,7 @@ import { useReduceMotion } from '~/hooks/useReduceMotion'
 import migrations from '~/db/migrations/migrations'
 import { db } from '~/lib/db'
 import { i18n } from '~/lib/i18n'
+import { matchNavigationBarToTheme } from '~/lib/navigation-bar'
 import { backupRepository } from '~/repositories/backup.repository'
 
 import type { ErrorBoundaryProps } from 'expo-router'
@@ -39,6 +41,12 @@ export default function RootLayout() {
   // this layout mounts once per launch, so coming back from the background does not wait again
   const reduceMotion = useReduceMotion()
   const [loopShown, setLoopShown] = useState(false)
+  const colorScheme = useColorScheme()
+
+  // the Android navigation bar buttons follow the light or dark theme, also when it changes
+  useEffect(() => {
+    matchNavigationBarToTheme(colorScheme)
+  }, [colorScheme])
 
   // the offline queue is sent once the local database is ready, then each time the app comes back:
   // the network may be back (ADR-004). A failed send keeps the queue for the next time
