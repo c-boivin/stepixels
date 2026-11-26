@@ -29,14 +29,15 @@ export interface SettingsProps {
   onPedometerPress: (action: 'ask' | 'settings') => void
   onSignUp: () => void
   onSignIn: () => void
+  onSignOut: () => void
 }
 
 /**
  * Settings (#37): one list, different for a guest and for a signed-in user. The rows of screens
  * not built yet are shown without action: introduction (#46), reset time (#44), password (#45),
- * sign-out (#41), data and privacy (#43), account deletion (#42).
+ * data and privacy (#43), account deletion (#42).
  */
-export function Settings({ page, onBack, onPedometerPress, onSignUp, onSignIn }: SettingsProps) {
+export function Settings({ page, onBack, onPedometerPress, onSignUp, onSignIn, onSignOut }: SettingsProps) {
   const { pedometer, pedometerAction, resetTime, email } = use(page)
   const arrow = i18n.t('settings.arrow')
 
@@ -72,7 +73,7 @@ export function Settings({ page, onBack, onPedometerPress, onSignUp, onSignIn }:
             tone="quiet"
           />
           <SettingsRow label={i18n.t('settings.password')} value={arrow} />
-          <SettingsRow label={i18n.t('settings.sign_out')} value={arrow} />
+          <SettingsRow label={i18n.t('settings.sign_out')} value={arrow} onPress={onSignOut} />
           <SettingsRow label={i18n.t('settings.privacy')} value={arrow} />
           <SettingsRow label={i18n.t('settings.delete_account')} value={arrow} tone="danger" />
         </>

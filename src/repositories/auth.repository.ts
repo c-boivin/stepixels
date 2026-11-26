@@ -1,6 +1,6 @@
 import { isAuthApiError, isAuthRetryableFetchError } from '@supabase/supabase-js'
 
-import { supabase } from '~/lib/supabase'
+import { removeStoredSession, supabase } from '~/lib/supabase'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 
 /**
@@ -21,6 +21,13 @@ export class AccountError extends Error {
     this.name = 'AccountError'
   }
 }
+
+/**
+ * Longest wait for the server at sign-out. The session is removed before the revoke request,
+ * unless Supabase first has to refresh an expired token: on a very slow network, that refresh
+ * can outlast this wait.
+ */
+const SIGN_OUT_WAIT_MS = 2_000
 
 /** Turns what Supabase Auth throws or returns into one of the cases the screens show. */
 export function toAccountError(error: unknown): AccountError {
@@ -80,6 +87,32 @@ export const authRepository = {
     // is signed in all the same, so the e-mail kept at sign-in is used
     if (error && isAuthRetryableFetchError(error)) return preferencesRepository.getAccountEmail()
     return null
+  },
+
+  /**
+   * Signs out of this phone (#41): the session leaves SecureStore at once, even offline
+   * (`scope: 'local'`), and the e-mail kept for offline use is forgotten; the server is told
+   * when it can be reached. Never throws.
+   */
+  async signOut(): Promise<void> {
+    // on a slow network, the request to the server is not waited for more than SIGN_OUT_WAIT_MS
+    const request = supabase.auth.signOut({ scope: 'local' }).then(
+      () => true,
+      () => true,
+    )
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const answered = await Promise.race([
+      request,
+      new Promise<false>((resolve) => {
+        timer = setTimeout(() => resolve(false), SIGN_OUT_WAIT_MS)
+      }),
+    ])
+    clearTimeout(timer)
+    // Supabase first refreshes an expired session over the network, and only then removes it: until
+    // then, a send would still go to this account. So the session leaves the phone now
+    if (!answered) await removeStoredSession().catch(() => {})
+    // signed out already: a failed write only keeps an e-mail that a guest never reads
+    await preferencesRepository.setAccountEmail(null).catch(() => {})
   },
 
   async signIn({ email, password }: SignInForm): Promise<void> {

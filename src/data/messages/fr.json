@@ -267,5 +267,15 @@
     "sign_out": "Se déconnecter",
     "privacy": "Données et confidentialité",
     "delete_account": "Supprimer mon compte"
+  },
+  "sign_out": {
+    "back": "← RÉGLAGES",
+    "back_label": "Retour aux réglages",
+    "title": "TE\nDÉCONNECTER ?",
+    "description": "Tes images restent sauvegardées.\nReconnecte-toi pour les retrouver.",
+    "confirm": "SE DÉCONNECTER",
+    "confirm_value": "→",
+    "cancel": "ANNULER",
+    "cancel_value": "←"
   }
 }

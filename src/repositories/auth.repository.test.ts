@@ -1,13 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js'
 
-import { supabase } from '~/lib/supabase'
+import { removeStoredSession, supabase } from '~/lib/supabase'
 import { authRepository, toAccountError } from '~/repositories/auth.repository'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 
 // the Supabase client needs the .env keys and the network: only its answers matter here
 jest.mock('~/lib/supabase', () => ({
-  supabase: { auth: { signUp: jest.fn(), signInWithPassword: jest.fn(), getSession: jest.fn() } },
+  supabase: { auth: { signUp: jest.fn(), signInWithPassword: jest.fn(), getSession: jest.fn(), signOut: jest.fn() } },
+  removeStoredSession: jest.fn().mockResolvedValue(undefined),
 }))
 
 const SESSION = { access_token: 'token' }
@@ -107,5 +108,50 @@ describe('authRepository', () => {
     jest.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as never)
 
     expect(await authRepository.getEmail()).toBeNull()
+  })
+
+  it('signs out of this phone only, and forgets the kept e-mail', async () => {
+    await preferencesRepository.setAccountEmail('camille@exemple.fr')
+    jest.mocked(supabase.auth.signOut).mockResolvedValue({ error: null } as never)
+
+    await authRepository.signOut()
+
+    expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
+    expect(await preferencesRepository.getAccountEmail()).toBeNull()
+  })
+
+  it('signs out offline too: Supabase answers the network error, the e-mail is still forgotten', async () => {
+    await preferencesRepository.setAccountEmail('camille@exemple.fr')
+    jest.mocked(supabase.auth.signOut).mockResolvedValue({ error: new AuthRetryableFetchError('Failed to fetch', 0) } as never)
+
+    await expect(authRepository.signOut()).resolves.toBeUndefined()
+    expect(await preferencesRepository.getAccountEmail()).toBeNull()
+  })
+
+  describe('on a slow network', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      jest.mocked(removeStoredSession).mockClear().mockResolvedValue(undefined)
+    })
+    afterEach(() => jest.useRealTimers())
+
+    it('does not wait for a server that never answers, and removes the session itself', async () => {
+      jest.mocked(supabase.auth.signOut).mockReturnValue(new Promise(() => {}) as never)
+
+      const signOut = authRepository.signOut()
+      await jest.advanceTimersByTimeAsync(2_000)
+
+      await expect(signOut).resolves.toBeUndefined()
+      expect(removeStoredSession).toHaveBeenCalled()
+    })
+
+    it('leaves the session to Supabase when it answers in time, with no timer left', async () => {
+      jest.mocked(supabase.auth.signOut).mockResolvedValue({ error: null } as never)
+
+      await authRepository.signOut()
+
+      expect(removeStoredSession).not.toHaveBeenCalled()
+      expect(jest.getTimerCount()).toBe(0)
+    })
   })
 })

@@ -20,7 +20,12 @@ jest.mock('~/lib/steps', () => ({
   openStepsSettings: jest.fn().mockResolvedValue(undefined),
 }))
 
-const ROUTES = { index: () => <View />, settings: SettingsPage, 'account/sign-up': () => <View testID="sign-up" /> }
+const ROUTES = {
+  index: () => <View />,
+  settings: SettingsPage,
+  'account/sign-up': () => <View testID="sign-up" />,
+  'account/sign-out': () => <View testID="sign-out" />,
+}
 
 async function openSettings() {
   await renderRouter(ROUTES, { initialUrl: '/settings' })
@@ -94,6 +99,15 @@ describe('settings route', () => {
     await act(async () => {})
 
     expect(jest.mocked(getStepsAccess).mock.calls.length).toBe(before + 1)
+  })
+
+  it('opens the sign-out confirmation once signed in', async () => {
+    jest.mocked(authRepository.getEmail).mockResolvedValue('camille@exemple.fr')
+
+    await openSettings()
+    await fireEvent.press(screen.getByRole('button', { name: 'Se déconnecter' }))
+
+    expect(await screen.findByTestId('sign-out')).toBeTruthy()
   })
 
   it('opens the sign-up', async () => {
