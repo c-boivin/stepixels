@@ -24,6 +24,7 @@
   },
   "home": {
     "title": "STEPIXELS",
+    "settings_label": "Réglages",
     "counter": {
       "title": "COMPTEUR DU JOUR",
       "summary": "Compteur du jour : %{steps} pas à valider",

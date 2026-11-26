@@ -40,6 +40,8 @@ export interface HomeProps extends HomeDayParams {
   onDayEnd: () => void
   /** Called after the user answered the steps access dialog: the steps must be read again. */
   onStepsAccessChange: () => void
+  /** Called on the gear of the top bar: opens the settings (#37). No gear until the settings screen exists. */
+  onSettingsPress?: () => void
 }
 
 /**
@@ -54,6 +56,7 @@ export function Home({
   nextReset,
   onDayEnd,
   onStepsAccessChange,
+  onSettingsPress,
 }: HomeProps) {
   const colors = useColors()
   const countdown = useCountdown(nextReset, onDayEnd)
@@ -69,7 +72,10 @@ export function Home({
   return (
     <SafeAreaView edges={['top', 'bottom']} style={[STYLES.screen, { backgroundColor: colors.background }]}>
       <View style={STYLES.top}>
-        <TopBar title={i18n.t('home.title')} />
+        <TopBar
+          title={i18n.t('home.title')}
+          settings={onSettingsPress && { label: i18n.t('home.settings_label'), onPress: onSettingsPress }}
+        />
 
         <View
           accessible
