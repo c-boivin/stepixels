@@ -1,12 +1,13 @@
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library'
 
+import OnboardingRulePage from '~/app/onboarding/rule'
 import OnboardingWelcomePage, { ErrorBoundary } from '~/app/onboarding/welcome'
 import { communityRepository } from '~/repositories/community.repository'
 
 // the total comes from Supabase or from the phone: here, only the screen is tested
 jest.mock('~/repositories/community.repository', () => ({ communityRepository: { getTotal: jest.fn() } }))
 
-const ROUTES = { 'onboarding/welcome': { default: OnboardingWelcomePage, ErrorBoundary } }
+const ROUTES = { 'onboarding/welcome': { default: OnboardingWelcomePage, ErrorBoundary }, 'onboarding/rule': OnboardingRulePage }
 
 describe('onboarding welcome route', () => {
   it('shows the community total, the title and the button', async () => {
@@ -30,6 +31,16 @@ describe('onboarding welcome route', () => {
     expect(screen.queryByText('par la communauté des Stepixs')).toBeNull()
   })
 
+  it('opens onboarding 2/4 on "C’EST PARTI"', async () => {
+    jest.mocked(communityRepository.getTotal).mockResolvedValue(null)
+
+    await renderRouter(ROUTES, { initialUrl: '/onboarding/welcome' })
+    await fireEvent.press(await screen.findByRole('button', { name: 'C’EST PARTI' }))
+
+    expect(await screen.findByLabelText('Étape 2 sur 4')).toBeTruthy()
+    expect(screen).toHavePathname('/onboarding/rule')
+  })
+
   it('shows an error with a retry button when the screen cannot load, and loads it again on retry', async () => {
     // React logs the caught error: keep the test output readable
     jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -39,7 +50,7 @@ describe('onboarding welcome route', () => {
 
     expect(await screen.findByRole('header', { name: 'OUPS' })).toBeTruthy()
 
-    fireEvent.press(screen.getByRole('button', { name: 'RÉESSAYER' }))
+    await fireEvent.press(screen.getByRole('button', { name: 'RÉESSAYER' }))
 
     expect(await screen.findByLabelText('Déjà 42 pas révélés par la communauté des Stepixs')).toBeTruthy()
   })

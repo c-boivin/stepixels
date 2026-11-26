@@ -6,6 +6,17 @@
       "button": "RÉESSAYER"
     }
   },
+  "common": {
+    "error": {
+      "title": "OUPS",
+      "description": "L’écran n’a pas pu se charger. Réessaie.",
+      "button": "RÉESSAYER"
+    }
+  },
+  "launch": {
+    "logo": "STEPIXELS",
+    "loading": "Stepixels se prépare"
+  },
   "images": {
     "mushroom": "LE CHAMPIGNON",
     "star": "L’ÉTOILE",
@@ -21,12 +32,15 @@
       "summary": "Déjà %{total} pas révélés par la communauté des Stepixs",
       "loading": "Chargement du nombre de pas de la communauté",
       "title": "TU VEUX EN FAIRE\nPARTIE ?",
-      "button": "C’EST PARTI",
-      "error": {
-        "title": "OUPS",
-        "description": "L’écran n’a pas pu se charger. Réessaie.",
-        "button": "RÉESSAYER"
-      }
+      "button": "C’EST PARTI"
+    },
+    "rule": {
+      "step": "2 / 4",
+      "step_label": "Étape 2 sur 4",
+      "title": "100 PAS\n= 1 PIXEL",
+      "description": "Tous les 100 pas, une case\nde l’image se révèle.",
+      "button": "CONTINUER",
+      "button_value": "→"
     }
   }
 }
