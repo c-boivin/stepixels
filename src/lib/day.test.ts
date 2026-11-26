@@ -48,6 +48,14 @@ describe('getDayWindows', () => {
     expect(counter.start).toEqual(at('2026-11-26T20:00:00'))
   })
 
+  it('never starts the counter after now when the last validation is in the future (clock moved back)', () => {
+    const now = at('2026-11-26T15:00:00')
+    const { counter, lost } = getDayWindows({ ...base, now, lastValidatedAt: at('2026-11-26T18:00:00') })
+
+    expect(counter).toEqual({ start: now, end: now })
+    expect(lost).toBeNull()
+  })
+
   it('finds the unvalidated steps of the previous day, after its last validation', () => {
     const { lost } = getDayWindows({
       ...base,

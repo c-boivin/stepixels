@@ -40,8 +40,9 @@ export function getDayWindows({ resetTime, now, lastValidatedAt, startedAt }: Da
   const previousDayStart = shiftDay(dayStart, -1, resetTime)
   const validatedToday = lastValidatedAt !== null && lastValidatedAt >= dayStart
 
-  // the remainder of a validation is lost (R1): the counter starts again after it
-  const counter = { start: validatedToday ? lastValidatedAt : dayStart, end: now }
+  // the remainder of a validation is lost (R1): the counter starts again after it. A validation
+  // in the future (phone clock moved back) starts at `now`: a start after the end cannot be read
+  const counter = { start: validatedToday ? earliest(lastValidatedAt, now) : dayStart, end: now }
 
   // "DOMMAGE" stays until the first validation of the day (OQ-25), and never blames the user
   // for the steps walked before they had the app; an unknown start date loses nothing
@@ -90,6 +91,10 @@ function shiftDay(date: Date, days: number, resetTime: string): Date {
   const result = new Date(date)
   result.setDate(result.getDate() + days)
   return atResetTime(result, resetTime)
+}
+
+function earliest(a: Date, b: Date): Date {
+  return a < b ? a : b
 }
 
 function latest(dates: (Date | null)[]): Date {

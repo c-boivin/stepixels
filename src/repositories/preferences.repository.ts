@@ -3,6 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 /** Daily reset time used until the user picks one, as in the Supabase profiles table. */
 export const DEFAULT_RESET_TIME = '20:00'
 
+/** `HH:MM`, 00:00 to 23:59. */
+const RESET_TIME_FORMAT = /^([01]\d|2[0-3]):[0-5]\d$/
+
 const KEYS = {
   onboardingDone: 'stepixels.onboarding_done',
   startedAt: 'stepixels.started_at',
@@ -28,8 +31,14 @@ export const preferencesRepository = {
   async setOnboardingDone(done: boolean, at = new Date()) {
     await AsyncStorage.setItem(KEYS.onboardingDone, String(done))
     if (done && (await AsyncStorage.getItem(KEYS.startedAt)) === null) {
-      await AsyncStorage.setItem(KEYS.startedAt, at.toISOString())
+      await this.setStartedAt(at)
     }
+  },
+
+  /** Saves when the onboarding was done, and returns it. */
+  async setStartedAt(at: Date): Promise<Date> {
+    await AsyncStorage.setItem(KEYS.startedAt, at.toISOString())
+    return at
   },
 
   /** When the onboarding was first done; `null` before, or if the stored value is unreadable. */
@@ -40,9 +49,12 @@ export const preferencesRepository = {
     return date !== null && Number.isFinite(date.getTime()) ? date : null
   },
 
-  /** Reset time, `HH:MM` (00:00 to 23:30, in 30-minute steps). */
+  /** Reset time, `HH:MM` (00:00 to 23:30, in 30-minute steps); the default if the stored value is unreadable. */
   async getResetTime(): Promise<string> {
-    return (await AsyncStorage.getItem(KEYS.resetTime)) ?? DEFAULT_RESET_TIME
+    const value = await AsyncStorage.getItem(KEYS.resetTime)
+
+    // a malformed time would give an invalid date, then an error on every load
+    return value !== null && RESET_TIME_FORMAT.test(value) ? value : DEFAULT_RESET_TIME
   },
 
   async setResetTime(time: string) {

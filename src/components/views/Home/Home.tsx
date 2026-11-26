@@ -9,18 +9,24 @@ import { HomeCarousel } from './HomeCarousel'
 import { useCountdown } from '~/hooks/useCountdown'
 
 import { i18n } from '~/lib/i18n'
+import { openStepsSettings, requestStepsAccess, type StepsAccess } from '~/lib/steps'
 
 import type { HomeCarouselItemParams } from './HomeCarousel'
 
 import { TYPO, useColors } from '~/styles/theme'
 
-/** Height of the message block: it keeps its place when empty, so the counter never moves (#27). */
-const MESSAGE_HEIGHT = 68
+/**
+ * Minimum height of the message block: it keeps its place when empty, so the counter never moves
+ * (#27). A long message (big number, bigger system font) makes it grow instead of covering the carousel.
+ */
+const MESSAGE_MIN_HEIGHT = 68
 
 /** The day shown on the home screen (#27, #30). */
 export interface HomeDayParams {
-  /** Steps to validate, digits only (`4230`). */
-  counter: string
+  /** Access to the phone's steps: when it is not `granted`, the screen asks to allow it again. */
+  stepsAccess: StepsAccess
+  /** Steps to validate, digits only (`4230`); `null` when they cannot be read (`stepsAccess`). */
+  counter: string | null
   /** Steps lost at the last reset, formatted (`1 230`); `null` when there is no "DOMMAGE" to show. */
   lostSteps: string | null
   /** End of the current day, where the countdown reaches 0. */
@@ -32,13 +38,23 @@ export interface HomeProps extends HomeDayParams {
   images: HomeCarouselItemParams[]
   /** Called when the countdown reaches 0: a new day starts, the data must be read again (#30). */
   onDayEnd: () => void
+  /** Called after the user answered the steps access dialog: the steps must be read again. */
+  onStepsAccessChange: () => void
 }
 
 /**
  * The home screen: the steps to validate and the message of the day (#27), the image carousel (#28)
  * and the time left before the reset (#27, #30). The VALIDER button (#29) comes under the countdown.
  */
-export function Home({ images, counter, lostSteps, nextReset, onDayEnd }: HomeProps) {
+export function Home({
+  images,
+  stepsAccess,
+  counter,
+  lostSteps,
+  nextReset,
+  onDayEnd,
+  onStepsAccessChange,
+}: HomeProps) {
   const colors = useColors()
   const countdown = useCountdown(nextReset, onDayEnd)
   // the image being revealed, or the last one once every image is finished
@@ -57,15 +73,29 @@ export function Home({ images, counter, lostSteps, nextReset, onDayEnd }: HomePr
 
         <View
           accessible
-          accessibilityLabel={i18n.t('home.counter.summary', { steps: counter })}
+          accessibilityLabel={
+            counter === null
+              ? i18n.t('home.counter.unavailable_summary')
+              : i18n.t('home.counter.summary', { steps: counter })
+          }
           accessibilityLiveRegion="polite"
           style={STYLES.counter}>
           <Text style={[TYPO.overline12, { color: colors.muted }]}>{i18n.t('home.counter.title')}</Text>
-          <Text style={[TYPO.number80, { color: colors.text }]}>{counter}</Text>
+          <Text style={[TYPO.number80, { color: colors.text }]}>{counter ?? i18n.t('home.counter.unavailable')}</Text>
         </View>
 
         <View style={STYLES.message}>
           {/* the "Le saviez-vous ?" fact (#32) takes this place when there is no loss to show */}
+          {stepsAccess !== 'granted' && (
+            <View accessible style={STYLES.messageContent}>
+              <Text style={[TYPO.overline12, { color: colors.accentText }]}>
+                {i18n.t('home.steps_access.title')}
+              </Text>
+              <Text style={[TYPO.fact17, STYLES.centered, { color: colors.text }]}>
+                {i18n.t('home.steps_access.description')}
+              </Text>
+            </View>
+          )}
           {lostSteps !== null && (
             <View accessible style={STYLES.messageContent}>
               <Text style={[TYPO.overline12, { color: colors.accentText }]}>{i18n.t('home.lost.title')}</Text>
@@ -99,13 +129,34 @@ export function Home({ images, counter, lostSteps, nextReset, onDayEnd }: HomePr
           <Text style={[TYPO.label11, { color: colors.text }]}>{countdown}</Text>
         </View>
         <View style={STYLES.action}>
-          {index !== currentIndex && (
+          {index !== currentIndex ? (
             <Button
               variant="secondary"
               label={i18n.t('home.carousel.back')}
               value={i18n.t('home.carousel.back_value')}
               onPress={() => setBrowsed(null)}
             />
+          ) : stepsAccess === 'blocked' ? (
+            // only the settings can allow it (docs/conventions.md): coming back reads the steps again
+            <Button
+              label={i18n.t('home.steps_access.settings_button')}
+              value={i18n.t('home.steps_access.button_value')}
+              accessibilityHint={i18n.t('home.steps_access.settings_hint')}
+              onPress={() => {
+                openStepsSettings().catch(() => {})
+              }}
+            />
+          ) : (
+            stepsAccess !== 'granted' && (
+              // the system can still ask: one tap shows its dialog again
+              <Button
+                label={i18n.t('home.steps_access.allow_button')}
+                value={i18n.t('home.steps_access.button_value')}
+                onPress={() => {
+                  requestStepsAccess().then(onStepsAccessChange, onStepsAccessChange)
+                }}
+              />
+            )
           )}
         </View>
       </View>
@@ -130,7 +181,7 @@ const STYLES = StyleSheet.create({
     gap: 24,
   },
   message: {
-    height: MESSAGE_HEIGHT,
+    minHeight: MESSAGE_MIN_HEIGHT,
     alignSelf: 'stretch',
   },
   messageContent: {
