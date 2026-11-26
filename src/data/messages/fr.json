@@ -10,5 +10,23 @@
     "mushroom": "LE CHAMPIGNON",
     "star": "L’ÉTOILE",
     "leaf": "LA FEUILLE"
+  },
+  "onboarding": {
+    "welcome": {
+      "step": "1 / 4",
+      "step_label": "Étape 1 sur 4",
+      "before": "déjà",
+      "after": "pas révélés",
+      "community": "par la communauté des Stepixs",
+      "summary": "Déjà %{total} pas révélés par la communauté des Stepixs",
+      "loading": "Chargement du nombre de pas de la communauté",
+      "title": "TU VEUX EN FAIRE\nPARTIE ?",
+      "button": "C’EST PARTI",
+      "error": {
+        "title": "OUPS",
+        "description": "L’écran n’a pas pu se charger. Réessaie.",
+        "button": "RÉESSAYER"
+      }
+    }
   }
 }

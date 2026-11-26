@@ -203,6 +203,7 @@ The app has a light and a dark theme ("Themes" in `docs/specs.md`): **layout in 
 
 - `ui/Icon` wraps `expo-symbols` behind **our own names** (`'heart'`, `'close'`), each mapped to an SF Symbol (iOS) and a Material symbol (Android, web).
 - Icons are decorative: hidden from the screen reader (`accessible={false}`, `accessibilityElementsHidden`, `importantForAccessibility="no-hide-descendants"`). The button around them carries the label.
+- Design pictos (pixel art, 12 × 12 cells of 8 px) are SVG paths in `ui/Picto`, exported from Figma: `<Picto name="heart" />`. Orange when active, gray at 60% when inactive (`active={false}`). To add one, export it as SVG from Figma and copy its path into `PICTO_PATHS`.
 
 ## Accessibility
 
