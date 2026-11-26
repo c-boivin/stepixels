@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router'
-import { Suspense, useCallback, useEffect, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { AppState } from 'react-native'
 
 import { Message } from '~/components/views/Message'
@@ -29,6 +29,11 @@ export default function SettingsPage() {
   const router = useRouter()
   const [, page, refresh] = useRequest(getSettingsPage)
   const firstFocus = useRef(true)
+  // the permission dialog or the phone's settings are open: a second tap does nothing,
+  // and the app coming back from the dialog is not read twice
+  const asking = useRef(false)
+  // an error of the permission or settings call goes to the ErrorBoundary below
+  const [failure, setFailure] = useState<{ error: unknown } | null>(null)
 
   // back from the account screens: the user may now be signed in
   useFocusEffect(
@@ -44,20 +49,26 @@ export default function SettingsPage() {
   // back from the phone's settings: the pedometer access may have changed
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') refresh()
+      if (state === 'active' && !asking.current) refresh()
     })
     return () => subscription.remove()
   }, [refresh])
 
+  if (failure) throw failure.error
+
   async function onPedometerPress(action: 'ask' | 'settings') {
-    if (action === 'settings') {
-      await openStepsSettings()
-      return
+    if (asking.current) return
+    asking.current = true
+    try {
+      if (action === 'settings') await openStepsSettings()
+      else await requestStepsAccess()
+    } catch (error) {
+      setFailure({ error })
+    } finally {
+      asking.current = false
+      // read the answer: the dialog may not have sent the app to the background
+      refresh()
     }
-    // the system dialog sends the app to the background and back: the AppState refresh reads the answer,
-    // and this one covers a phone that answers without leaving the app
-    await requestStepsAccess()
-    refresh()
   }
 
   function onBack() {

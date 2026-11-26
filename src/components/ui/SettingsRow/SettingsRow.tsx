@@ -60,7 +60,8 @@ export function SettingsRow({ label, value, tone = 'default', onPress, accessibi
 const STYLES = StyleSheet.create({
   pressed: { opacity: 0.75 },
   row: { borderTopWidth: 1 },
-  content: { height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
-  label: { flexShrink: 0 },
+  // 60 high as in Figma, taller when a large system font makes the label wrap
+  content: { minHeight: 60, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+  label: { flexShrink: 1 },
   value: { flexShrink: 1, textAlign: 'right' },
 })
