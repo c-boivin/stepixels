@@ -81,6 +81,16 @@ describe('preferencesRepository', () => {
     })
   })
 
+  it('says an image is saved only when the account unlocked it (#35)', async () => {
+    await preferencesRepository.unlockImage(2)
+    // the sign-in screen opened again with the same image: it was already unlocked
+    await preferencesRepository.unlockSavedImage(2)
+    expect(await preferencesRepository.getSavedImage()).toBeNull()
+
+    await preferencesRepository.unlockSavedImage(3)
+    expect(await preferencesRepository.getSavedImage()).toBe(3)
+  })
+
   it('falls back to the first image when the stored value is unreadable', async () => {
     await AsyncStorage.setItem('stepixels.unlocked_image', 'abc')
 

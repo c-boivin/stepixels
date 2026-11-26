@@ -36,9 +36,10 @@ export default function SignInPage() {
     }
     // the account's progress and reset time come back before the home screen opens;
     // offline, the restore is tried again before the next send
-    await backupRepository.restore().catch(() => {})
-    // the account keeps the finished image (its own, or the guest's sent to it): the next one opens (#35)
-    if (unlock !== null && canUnlockImage(CATALOGUE, validationsRepository.getAll(), unlock)) {
+    const restored = await backupRepository.restore().then(() => true, () => false)
+    // the next image opens only if the account's progress has come back and keeps the finished
+    // image (#35): offline, the guest's validations would be checked instead of the account's
+    if (restored && unlock !== null && canUnlockImage(CATALOGUE, validationsRepository.getAll(), unlock)) {
       await preferencesRepository.unlockSavedImage(unlock).catch(() => {})
     }
     // outside the try: the user is signed in, a navigation problem is not a sign-in error

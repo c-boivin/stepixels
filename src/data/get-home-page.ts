@@ -37,8 +37,9 @@ export async function getHomePage(): Promise<HomePageData> {
     preferencesRepository.getStartedAt().then((date) => date ?? preferencesRepository.setStartedAt(now)),
     preferencesRepository.getUnlockedImage(),
     preferencesRepository.getSavedImage(),
-    // a guest's SUIVANT asks for an account first (#35)
-    authRepository.getEmail(),
+    // a guest's SUIVANT asks for an account first (#35); a broken session must not hide the
+    // images (ADR-004, offline first): the e-mail kept at sign-in is used instead
+    authRepository.getEmail().catch(() => preferencesRepository.getAccountEmail()),
   ])
   const lastValidation = getLastValidation(allValidations)
   const { counter, lost, nextReset } = getDayWindows({

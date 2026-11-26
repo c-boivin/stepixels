@@ -446,6 +446,16 @@ describe('first route', () => {
         expect((await preferencesRepository.getUnlockedImage()).number).toBe(1)
       })
 
+      it('still shows the images when the session cannot be read (ADR-004)', async () => {
+        jest.mocked(authRepository.getEmail).mockRejectedValueOnce(new Error('corrupted session'))
+        validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-24T10:00:00'))
+        mockSteps({ today: 0, yesterday: 0 })
+
+        await renderRouter(ROUTES)
+
+        expect(await screen.findByRole('button', { name: 'SUIVANT' })).toBeTruthy()
+      })
+
       it('says the image is saved once the account unlocked the next one (#35)', async () => {
         validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-24T10:00:00'))
         await preferencesRepository.unlockSavedImage(2)
