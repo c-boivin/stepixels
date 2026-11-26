@@ -13,6 +13,8 @@ const NEXT_BAR = 0.19
 const NEXT_STROKE = 1.5
 /** Blur of the neighbour cards, in points (Figma layer blur 6 = a standard deviation of 3). */
 const BLUR = 3
+/** Orange line under the rows being revealed, in points (Figma "Validation" card). */
+const REVEAL_LINE = 6
 
 export interface PixelGridParams {
   /** Cells per row and per column. */
@@ -33,6 +35,8 @@ export interface PixelGridProps extends PixelGridParams {
   showNext?: boolean
   /** Blurred, like the cards next to the one in front. */
   blurred?: boolean
+  /** An orange line, full width, under the row being revealed: the reveal animation (#29). */
+  revealLine?: boolean
 }
 
 function cellPath(index: number, width: number, inset: number, side: number): string {
@@ -71,7 +75,17 @@ export function pixelGridPaths({ width, palette, cells, revealed }: PixelGridPar
  * A pixel art image as one drawing: revealed cells in their colors, the others as dots,
  * and the next cell outlined in orange. Decorative: the card around it carries the label.
  */
-export function PixelGrid({ width, height, palette, cells, revealed, size, showNext = false, blurred = false }: PixelGridProps) {
+export function PixelGrid({
+  width,
+  height,
+  palette,
+  cells,
+  revealed,
+  size,
+  showNext = false,
+  blurred = false,
+  revealLine = false,
+}: PixelGridProps) {
   const colors = useColors()
   // 4 096 cells for a 64 × 64 image: computed again only when the image or its progress changes
   const paths = useMemo(
@@ -98,6 +112,17 @@ export function PixelGrid({ width, height, palette, cells, revealed, size, showN
           <Path key={color} d={d} fill={color} filter={filter} />
         ))}
         <Path d={paths.dots} fill={colors.control} filter={filter} />
+        {revealLine && revealed < cells.length && (
+          // under the row being filled, or under the last full row
+          <Rect
+            x={0}
+            y={Math.ceil(revealed / width)}
+            width={width}
+            height={REVEAL_LINE * point}
+            fill={colors.accent}
+            filter={filter}
+          />
+        )}
         {next !== null && (
           <>
             <Rect

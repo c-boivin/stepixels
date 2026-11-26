@@ -26,6 +26,8 @@ export interface ImageCardProps extends PixelGridParams {
   locked?: boolean
   /** Mark the next cell to reveal. */
   showNext?: boolean
+  /** The reveal animation runs on this card: an orange line under the rows being revealed (#29). */
+  revealLine?: boolean
   /**
    * How much the card is in front: 1 sharp with its tag, 0 blurred without it, like the cards
    * next to the one in front. An animated value lets the card follow the finger while it swipes.
@@ -37,7 +39,7 @@ export interface ImageCardProps extends PixelGridParams {
  * A card of the home carousel: the pixel art grid on a white square, with its tag or its padlock.
  * Decorative pieces only: the carousel gives each card its accessibility label.
  */
-export function ImageCard({ size, tag, locked = false, showNext, focus = 1, ...grid }: ImageCardProps) {
+export function ImageCard({ size, tag, locked = false, showNext, revealLine, focus = 1, ...grid }: ImageCardProps) {
   const colors = useColors()
   // the padlock keeps its Figma size on a 240 card, and scales with the card
   const lockScale = size / LOCK_CARD
@@ -49,7 +51,7 @@ export function ImageCard({ size, tag, locked = false, showNext, focus = 1, ...g
       {/* each drawing is kept as a GPU texture: while swiping, only its opacity changes */}
       {(focus !== 0 || !CAN_BLUR) && (
         <View renderToHardwareTextureAndroid shouldRasterizeIOS>
-          <PixelGrid {...grid} size={size} showNext={showNext} />
+          <PixelGrid {...grid} size={size} showNext={showNext} revealLine={revealLine} />
         </View>
       )}
       {focus !== 1 && CAN_BLUR && (
@@ -58,7 +60,7 @@ export function ImageCard({ size, tag, locked = false, showNext, focus = 1, ...g
           renderToHardwareTextureAndroid
           shouldRasterizeIOS
           style={[StyleSheet.absoluteFill, { opacity: blurOpacity }]}>
-          <PixelGrid {...grid} size={size} showNext={showNext} blurred />
+          <PixelGrid {...grid} size={size} showNext={showNext} revealLine={revealLine} blurred />
         </Animated.View>
       )}
       {tag !== undefined && (

@@ -64,4 +64,27 @@ describe('preferencesRepository', () => {
     await expect(preferencesRepository.setCommunityTotal(total)).rejects.toThrow(RangeError)
     expect(await preferencesRepository.getCommunityTotal()).toBeNull()
   })
+
+  it('unlocks only the first image on a first launch', async () => {
+    expect(await preferencesRepository.getUnlockedImage()).toEqual({ number: 1, unlockedAt: null })
+  })
+
+  it('remembers the unlocked image and when, and never goes back', async () => {
+    await preferencesRepository.unlockImage(2, new Date('2026-11-26T18:00:00.000Z'))
+    // a second tap on SUIVANT, or an older image: nothing changes
+    await preferencesRepository.unlockImage(2, new Date('2026-11-26T18:00:05.000Z'))
+    await preferencesRepository.unlockImage(1)
+
+    expect(await preferencesRepository.getUnlockedImage()).toEqual({
+      number: 2,
+      unlockedAt: new Date('2026-11-26T18:00:00.000Z'),
+    })
+  })
+
+  it('falls back to the first image when the stored value is unreadable', async () => {
+    await AsyncStorage.setItem('stepixels.unlocked_image', 'abc')
+
+    expect(await preferencesRepository.getUnlockedImage()).toEqual({ number: 1, unlockedAt: null })
+  })
 })
+

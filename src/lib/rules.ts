@@ -6,6 +6,9 @@
 /** Steps needed to reveal one pixel, that is one cell of an image (R1). */
 export const STEPS_PER_PIXEL = 100
 
+/** Length of one step, to turn steps into a distance (R6): 25 600 steps = 19.2 km. */
+export const METERS_PER_STEP = 0.75
+
 /** Reset times the user can pick (R4), `HH:MM`: from 00:00 to 23:30, every 30 minutes. */
 export const RESET_TIMES: readonly string[] = Array.from({ length: 48 }, (_, index) => {
   const hours = String(Math.floor(index / 2)).padStart(2, '0')

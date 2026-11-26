@@ -1,4 +1,4 @@
-import { imageCardAdapter } from '~/data/adapters/images.adapters'
+import { imageCardAdapter, imageFinishedAdapter } from '~/data/adapters/images.adapters'
 import { CATALOGUE } from '~/data/images/catalogue'
 
 const MUSHROOM = CATALOGUE[0]
@@ -40,5 +40,20 @@ describe('imageCardAdapter', () => {
 
   it('reveals nothing of the locked image', () => {
     expect(imageCardAdapter({ image: MUSHROOM, revealed: 0, state: 'locked' }).revealed).toBe(0)
+  })
+})
+
+describe('imageFinishedAdapter', () => {
+  it('shows the whole image, its name, and its steps, days and distance', () => {
+    expect(imageFinishedAdapter({ image: MUSHROOM, days: 4, next: 2 })).toMatchObject({
+      revealed: 256,
+      name: 'LE CHAMPIGNON',
+      summary: `25${SPACE}600 pas · 4 jours · 19 km`,
+      next: 2,
+    })
+  })
+
+  it('writes a single day in the singular', () => {
+    expect(imageFinishedAdapter({ image: MUSHROOM, days: 1, next: 2 }).summary).toBe(`25${SPACE}600 pas · 1 jour · 19 km`)
   })
 })

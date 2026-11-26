@@ -14,6 +14,16 @@ const KEYS = {
   stepsAccessAsked: 'stepixels.steps_access_asked',
   accountEmail: 'stepixels.account_email',
   restorePendingSince: 'stepixels.restore_pending_since',
+  unlockedImage: 'stepixels.unlocked_image',
+  unlockedAt: 'stepixels.unlocked_at',
+}
+
+/** The last image the user can reveal (#31), and when it was unlocked. */
+export interface UnlockedImage {
+  /** Number of the image in the catalogue: 1 until the user taps `SUIVANT` on a finished image. */
+  number: number
+  /** When `SUIVANT` unlocked it; `null` for the first image, unlocked from the start. */
+  unlockedAt: Date | null
 }
 
 /**
@@ -120,5 +130,30 @@ export const preferencesRepository = {
 
   async setStepsAccessAsked(asked: boolean) {
     await AsyncStorage.setItem(KEYS.stepsAccessAsked, String(asked))
+  },
+
+  /** The last unlocked image; the first one on a first launch, or if the stored value is unreadable. */
+  async getUnlockedImage(): Promise<UnlockedImage> {
+    const [number, at] = await Promise.all([
+      AsyncStorage.getItem(KEYS.unlockedImage).then(Number),
+      AsyncStorage.getItem(KEYS.unlockedAt),
+    ])
+    if (!Number.isInteger(number) || number < 1) return { number: 1, unlockedAt: null }
+
+    const unlockedAt = at === null ? null : new Date(at)
+    return { number, unlockedAt: unlockedAt !== null && Number.isFinite(unlockedAt.getTime()) ? unlockedAt : null }
+  },
+
+  /**
+   * Unlocks the image `number` (`SUIVANT` on a finished image, #31). Never goes back: a second tap
+   * on `SUIVANT`, while the screen is read again, does not unlock the image after it.
+   */
+  async unlockImage(number: number, at = new Date()) {
+    if ((await this.getUnlockedImage()).number >= number) return
+
+    await AsyncStorage.multiSet([
+      [KEYS.unlockedImage, String(number)],
+      [KEYS.unlockedAt, at.toISOString()],
+    ])
   },
 }

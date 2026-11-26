@@ -109,6 +109,7 @@ describe('first route', () => {
         { imageNumber: 1, pixels: 256 },
         { imageNumber: 2, pixels: 10 },
       ])
+      await preferencesRepository.unlockImage(2)
 
       await renderRouter(ROUTES)
       expect(await screen.findByText('02 - L’ÉTOILE', HIDDEN)).toBeTruthy()
@@ -242,6 +243,94 @@ describe('first route', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'RÉESSAYER' }))
 
       expect(await screen.findByText('4230')).toBeTruthy()
+    })
+
+    describe('validation (#29) and finished image (#31)', () => {
+      it('disables VALIDER under 100 steps: it would give 0 pixel', async () => {
+        mockSteps({ today: 99, yesterday: 0 })
+
+        await renderRouter(ROUTES)
+
+        expect(await screen.findByRole('button', { name: 'VALIDER' })).toBeDisabled()
+      })
+
+      it('saves the pixels at once, reveals them, then says how many steps were validated', async () => {
+        mockSteps({ today: 4230, yesterday: 0 })
+        await renderRouter(ROUTES)
+
+        // the phone has no step after the validation
+        jest.mocked(getStepsBetween).mockResolvedValue(0)
+        await fireEvent.press(await screen.findByRole('button', { name: 'VALIDER' }))
+
+        // saved before the animation: closing the app now keeps the pixels; the 30 steps left are lost
+        expect(validationsRepository.getAll()).toMatchObject([{ imageNumber: 1, pixels: 42, steps: 4200 }])
+        expect(screen.getByRole('button', { name: 'VALIDATION…' })).toBeTruthy()
+        expect(screen.getByText('+42 PIXELS')).toBeTruthy()
+        expect(screen.getByText('ÇA SE RÉVÈLE')).toBeTruthy()
+        expect(screen.getByText('VALIDATION')).toBeTruthy()
+
+        await act(async () => {
+          jest.advanceTimersByTime(3000)
+        })
+
+        expect(await screen.findByText('VALIDÉ')).toBeTruthy()
+        expect(screen.getByText(`+4${SPACE}200 pas validés. Reviens quand tu veux.`)).toBeTruthy()
+        expect(screen.getByLabelText('Compteur du jour : 0 pas à valider')).toBeTruthy()
+        expect(screen.getByLabelText('01 - LE CHAMPIGNON, 42 pixels révélés sur 256')).toBeTruthy()
+        expect(screen.getByRole('button', { name: 'VALIDER' })).toBeDisabled()
+      })
+
+      it('celebrates a finished image once, then unlocks the next one with the extra pixels', async () => {
+        validationsRepository.add([{ imageNumber: 1, pixels: 250 }], new Date('2026-11-24T10:00:00'))
+        mockSteps({ today: 1000, yesterday: 0 })
+        await renderRouter(ROUTES)
+
+        jest.mocked(getStepsBetween).mockResolvedValue(0)
+        await fireEvent.press(await screen.findByRole('button', { name: 'VALIDER' }))
+        // 10 pixels: 6 finish image 01, 4 are kept for image 02
+        expect(validationsRepository.getAll().slice(1)).toMatchObject([
+          { imageNumber: 1, pixels: 6 },
+          { imageNumber: 2, pixels: 4 },
+        ])
+        // no modal before the last pixel appears
+        expect(screen.queryByRole('header', { name: 'LE CHAMPIGNON' })).toBeNull()
+
+        await act(async () => {
+          jest.advanceTimersByTime(3000)
+        })
+
+        // two days with a validation of the image: November 24 and today
+        expect(await screen.findByRole('header', { name: 'LE CHAMPIGNON' })).toBeTruthy()
+        expect(screen.getByText(`25${SPACE}600 pas · 2 jours · 19 km`)).toBeTruthy()
+
+        // the home screen has its own SUIVANT under the modal: the modal's one comes last
+        await fireEvent.press(screen.getAllByRole('button', { name: 'SUIVANT' }).at(-1)!)
+
+        expect(await screen.findByText('NOUVELLE IMAGE')).toBeTruthy()
+        expect(screen.getByText('L’image 02 est débloquée. À toi de la révéler.')).toBeTruthy()
+        expect(screen.getByLabelText(`02 - L’ÉTOILE, 4 pixels révélés sur 1${SPACE}024`)).toBeTruthy()
+        expect(screen.queryByRole('header', { name: 'LE CHAMPIGNON' })).toBeNull()
+        expect((await preferencesRepository.getUnlockedImage()).number).toBe(2)
+      })
+
+      it('keeps a finished image waiting for SUIVANT after a restart, without the modal', async () => {
+        validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-24T10:00:00'))
+        mockSteps({ today: 4230, yesterday: 0 })
+
+        await renderRouter(ROUTES)
+
+        expect(await screen.findByText('IMAGE TERMINÉE')).toBeTruthy()
+        expect(screen.getByText('Le champignon est complet. 19 km de marche, bravo !')).toBeTruthy()
+        expect(screen.queryByRole('button', { name: 'VALIDER' })).toBeNull()
+        expect(screen.queryByRole('header', { name: 'LE CHAMPIGNON' })).toBeNull()
+
+        await fireEvent.press(screen.getByRole('button', { name: 'SUIVANT' }))
+
+        expect(await screen.findByText('NOUVELLE')).toBeTruthy()
+        expect(screen.getByLabelText(`02 - L’ÉTOILE, aucun pixel révélé sur 1${SPACE}024`)).toBeTruthy()
+        // the steps of the day can now be validated on image 02
+        expect(screen.getByRole('button', { name: 'VALIDER' })).not.toBeDisabled()
+      })
     })
   })
 })

@@ -1,4 +1,4 @@
-import { getImagesProgress } from '~/lib/progress'
+import { getImagesProgress, splitPixels } from '~/lib/progress'
 
 // three small images: 4, 4 and 9 cells
 const IMAGES = [
@@ -7,8 +7,8 @@ const IMAGES = [
   { number: 3, cells: [0, 0, 0, 0, 0, 0, 0, 0, 0] },
 ]
 
-function states(validations: { imageNumber: number; pixels: number }[]) {
-  return getImagesProgress(IMAGES, validations).map(({ image, revealed, state }) => [image.number, revealed, state])
+function states(validations: { imageNumber: number; pixels: number }[], unlockedImage?: number) {
+  return getImagesProgress(IMAGES, validations, unlockedImage).map(({ image, revealed, state }) => [image.number, revealed, state])
 }
 
 describe('getImagesProgress', () => {
@@ -69,5 +69,65 @@ describe('getImagesProgress', () => {
       [2, 4, 'finished'],
       [3, 9, 'finished'],
     ])
+  })
+
+  it('keeps the next image locked after a finished image until it is unlocked (#31)', () => {
+    expect(states([{ imageNumber: 1, pixels: 4 }], 1)).toEqual([
+      [1, 4, 'finished'],
+      [2, 0, 'locked'],
+    ])
+  })
+
+  it('keeps the pixels carried to a locked image hidden until it is unlocked', () => {
+    const validations = [
+      { imageNumber: 1, pixels: 4 },
+      { imageNumber: 2, pixels: 3 },
+    ]
+
+    expect(states(validations, 1)[1]).toEqual([2, 0, 'locked'])
+    expect(states(validations, 2)[1]).toEqual([2, 3, 'current'])
+  })
+})
+
+describe('splitPixels', () => {
+  it('puts every pixel on the image being revealed when it has room', () => {
+    expect(splitPixels(IMAGES, [{ imageNumber: 1, pixels: 1 }], 2)).toEqual([{ imageNumber: 1, pixels: 2 }])
+  })
+
+  it('fills the image being revealed exactly, with no part for the next one', () => {
+    expect(splitPixels(IMAGES, [{ imageNumber: 1, pixels: 1 }], 3)).toEqual([{ imageNumber: 1, pixels: 3 }])
+  })
+
+  it('carries the pixels beyond the end of an image to the next ones (OQ-12)', () => {
+    expect(splitPixels(IMAGES, [{ imageNumber: 1, pixels: 3 }], 7)).toEqual([
+      { imageNumber: 1, pixels: 1 },
+      { imageNumber: 2, pixels: 4 },
+      { imageNumber: 3, pixels: 2 },
+    ])
+  })
+
+  it('starts after the pixels already carried to the next image', () => {
+    expect(
+      splitPixels(
+        IMAGES,
+        [
+          { imageNumber: 1, pixels: 4 },
+          { imageNumber: 2, pixels: 1 },
+        ],
+        2,
+      ),
+    ).toEqual([{ imageNumber: 2, pixels: 2 }])
+  })
+
+  it('drops the pixels beyond the last image (OQ-13)', () => {
+    expect(splitPixels(IMAGES, [], 20)).toEqual([
+      { imageNumber: 1, pixels: 4 },
+      { imageNumber: 2, pixels: 4 },
+      { imageNumber: 3, pixels: 9 },
+    ])
+  })
+
+  it('gives nothing for 0 pixel', () => {
+    expect(splitPixels(IMAGES, [], 0)).toEqual([])
   })
 })
