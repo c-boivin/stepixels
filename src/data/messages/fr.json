@@ -112,5 +112,35 @@
       "button_value": "→",
       "connected": "PODOMÈTRE\nCONNECTÉ"
     }
+  },
+  "account": {
+    "back": "← RETOUR",
+    "back_label": "Retour",
+    "button_value": "→",
+    "first_name": "PRÉNOM",
+    "email": "E-MAIL",
+    "password": "MOT DE PASSE",
+    "sign_up": {
+      "title": "CRÉE\nTON COMPTE",
+      "subtitle": "Pour garder tes images,\nmême sur un autre téléphone.",
+      "terms": "J’accepte les conditions d’utilisation et la politique de confidentialité.",
+      "button": "CRÉER MON COMPTE",
+      "sending": "CRÉATION…",
+      "has_account": "J’ai déjà un compte"
+    },
+    "sign_in": {
+      "title": "CONTENT DE\nTE REVOIR",
+      "button": "SE CONNECTER",
+      "sending": "CONNEXION…",
+      "forgot": "Mot de passe oublié ?",
+      "no_account": "Pas de compte ? Créer un compte"
+    },
+    "error": {
+      "email_taken": "! Cet e-mail a déjà un compte.",
+      "password_too_short": "! 8 caractères minimum.",
+      "wrong_credentials": "! E-mail ou mot de passe incorrect.",
+      "offline": "! Pas de connexion. Réessaie.",
+      "unknown": "! Ça n’a pas marché. Réessaie."
+    }
   }
 }
