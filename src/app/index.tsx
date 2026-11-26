@@ -14,41 +14,45 @@ import { i18n } from '~/lib/i18n'
 import type { ErrorBoundaryProps } from 'expo-router'
 import type { HomeCarouselItemParams } from '~/components/views/Home/HomeCarousel'
 
-/** `onboardingDone` is `false` on a first launch: the user starts with the onboarding. */
-export type HomePageData =
-  | { onboardingDone: false }
-  | {
-      onboardingDone: true
-      /** The images of the home carousel, from the validations saved on the phone. */
-      images: HomeCarouselItemParams[]
-      /** The steps of the day, the lost steps and the next reset. */
-      day: HomeDayParams
-    }
+export interface HomePageData {
+  /** The home screen; `null` on a first launch: the user starts with the onboarding. */
+  home: {
+    /** The images of the home carousel, from the validations saved on the phone. */
+    images: HomeCarouselItemParams[]
+    /** The steps of the day, the lost steps and the next reset. */
+    day: HomeDayParams
+  } | null
+}
 
 /**
  * The first route (#22): the onboarding the first time, the home screen afterwards.
  * The launch screen stays while the choice is read from the phone.
  */
 export default function HomePage() {
-  const [, page, refresh] = useRequest(getHomePage)
+  const [refreshing, page, refresh] = useRequest(getHomePage)
 
-  // the steps are read when the app opens and when it comes back, never live (R12)
-  useAppActive(refresh)
+  // one read at a time: back after a reset in the background, the app and the countdown both ask
+  function refreshOnce() {
+    if (!refreshing) refresh()
+  }
+
+  // the steps (and their access) are read when the app opens and when it comes back, never live (R12)
+  useAppActive(refreshOnce)
 
   return (
     <Suspense fallback={<Launch />}>
-      <FirstScreen page={page} onDayEnd={refresh} />
+      <FirstScreen page={page} onChange={refreshOnce} />
     </Suspense>
   )
 }
 
-function FirstScreen({ page, onDayEnd }: { page: Promise<HomePageData>; onDayEnd: () => void }) {
-  const data = use(page)
+function FirstScreen({ page, onChange }: { page: Promise<HomePageData>; onChange: () => void }) {
+  const { home } = use(page)
 
-  if (!data.onboardingDone) return <Redirect href="/onboarding/welcome" />
+  if (home === null) return <Redirect href="/onboarding/welcome" />
 
   // a new day starts at the reset time: the steps are read again from it (#30)
-  return <Home images={data.images} {...data.day} onDayEnd={onDayEnd} />
+  return <Home images={home.images} {...home.day} onDayEnd={onChange} onStepsAccessChange={onChange} />
 }
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {

@@ -41,6 +41,19 @@ describe('preferencesRepository', () => {
     expect(await preferencesRepository.getStartedAt()).toBeNull()
   })
 
+  it('saves a start date for an install that finished the onboarding before it existed', async () => {
+    const at = new Date('2026-11-26T15:00:00.000Z')
+
+    expect(await preferencesRepository.setStartedAt(at)).toEqual(at)
+    expect(await preferencesRepository.getStartedAt()).toEqual(at)
+  })
+
+  it.each(['abc', '25:00', '20:60', '8:00', ''])('returns the default reset time when the stored value is %p', async (value) => {
+    await AsyncStorage.setItem('stepixels.reset_time', value)
+
+    expect(await preferencesRepository.getResetTime()).toBe(DEFAULT_RESET_TIME)
+  })
+
   it('returns no community total when the stored value is not a number', async () => {
     await AsyncStorage.setItem('stepixels.community_total', 'abc')
 
