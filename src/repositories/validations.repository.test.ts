@@ -72,4 +72,15 @@ describe('validationsRepository', () => {
 
     expect(validationsRepository.getAll().map(({ pixels }) => pixels)).toEqual([1, 2])
   })
+
+  it('returns no last validation before the first one', () => {
+    expect(validationsRepository.getLastValidatedAt()).toBeNull()
+  })
+
+  it('returns the time of the latest validation, whatever the saving order', () => {
+    validationsRepository.add([{ imageNumber: 1, pixels: 2 }], new Date('2026-11-25T18:00:00.000Z'))
+    validationsRepository.add([{ imageNumber: 1, pixels: 3 }], new Date('2026-11-24T18:00:00.000Z'))
+
+    expect(validationsRepository.getLastValidatedAt()).toEqual(new Date('2026-11-25T18:00:00.000Z'))
+  })
 })

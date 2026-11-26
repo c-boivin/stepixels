@@ -31,6 +31,14 @@ export async function requestStepsAccess(): Promise<StepsAccess> {
  * walked while the app was closed. Throws when the steps cannot be read (no access).
  */
 export async function getStepsSince(start: Date): Promise<number> {
+  return getStepsBetween(start, new Date())
+}
+
+/**
+ * Returns the steps stored by the phone between `start` and `end` (for example the previous
+ * day, to tell the user how many steps were lost). Throws when the steps cannot be read.
+ */
+export async function getStepsBetween(start: Date, end: Date): Promise<number> {
   throw new Error('No step source on this platform')
 }
 

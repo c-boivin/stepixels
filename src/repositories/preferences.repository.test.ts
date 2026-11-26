@@ -13,6 +13,7 @@ describe('preferencesRepository', () => {
     expect(await preferencesRepository.getResetTime()).toBe(DEFAULT_RESET_TIME)
     expect(await preferencesRepository.getCommunityTotal()).toBeNull()
     expect(await preferencesRepository.getStepsAccessAsked()).toBe(false)
+    expect(await preferencesRepository.getStartedAt()).toBeNull()
   })
 
   it('reads back what was saved', async () => {
@@ -25,6 +26,19 @@ describe('preferencesRepository', () => {
     expect(await preferencesRepository.getResetTime()).toBe('07:30')
     expect(await preferencesRepository.getCommunityTotal()).toBe(1_250_000)
     expect(await preferencesRepository.getStepsAccessAsked()).toBe(true)
+  })
+
+  it('remembers when the onboarding was first done, even when the introduction is replayed', async () => {
+    await preferencesRepository.setOnboardingDone(true, new Date('2026-11-25T15:00:00.000Z'))
+    await preferencesRepository.setOnboardingDone(true, new Date('2026-11-28T09:00:00.000Z'))
+
+    expect(await preferencesRepository.getStartedAt()).toEqual(new Date('2026-11-25T15:00:00.000Z'))
+  })
+
+  it('returns no start date when the stored value is not a date', async () => {
+    await AsyncStorage.setItem('stepixels.started_at', 'abc')
+
+    expect(await preferencesRepository.getStartedAt()).toBeNull()
   })
 
   it('returns no community total when the stored value is not a number', async () => {

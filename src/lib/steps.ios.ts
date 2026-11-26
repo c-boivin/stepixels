@@ -25,8 +25,12 @@ export async function requestStepsAccess(): Promise<StepsAccess> {
 }
 
 export async function getStepsSince(start: Date): Promise<number> {
+  return getStepsBetween(start, new Date())
+}
+
+export async function getStepsBetween(start: Date, end: Date): Promise<number> {
   // CoreMotion keeps the last 7 days: an older start only returns what is left
-  const { steps } = await Pedometer.getStepCountAsync(start, new Date())
+  const { steps } = await Pedometer.getStepCountAsync(start, end)
   return steps
 }
 

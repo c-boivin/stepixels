@@ -1,21 +1,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { fireEvent, renderRouter, screen } from 'expo-router/testing-library'
+import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library'
+import { AppState } from 'react-native'
 
-import HomePage from '~/app/index'
+import HomePage, { ErrorBoundary } from '~/app/index'
 import OnboardingWelcomePage from '~/app/onboarding/welcome'
 import { CAROUSEL_SLOT } from '~/components/views/Home/HomeCarousel'
 import { validations } from '~/db/schema'
 import { db } from '~/lib/db'
+import { getStepsBetween } from '~/lib/steps'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 import { validationsRepository } from '~/repositories/validations.repository'
+
+import type { AppStateStatus } from 'react-native'
 
 // the onboarding screen loads the community total: here, only the route choice matters
 jest.mock('~/repositories/community.repository', () => ({
   communityRepository: { getTotal: jest.fn().mockResolvedValue(null) },
 }))
 
+// what the phone answers for each period of time: each test sets it
+jest.mock('~/lib/steps', () => ({ getStepsBetween: jest.fn() }))
+
 // route tests live here, never in src/app/ (every file there is a route)
-const ROUTES = { index: HomePage, 'onboarding/welcome': OnboardingWelcomePage }
+const ROUTES = { index: { default: HomePage, ErrorBoundary }, 'onboarding/welcome': OnboardingWelcomePage }
 // the title and steps under the card are hidden from the screen reader (the card reads them)
 const HIDDEN = { includeHiddenElements: true }
 // Intl writes French thousands with a narrow no-break space (U+202F)
@@ -28,22 +35,39 @@ async function swipeTo(index: number) {
   })
 }
 
+// French times (test/global-setup.ts), with the default reset time 20:00
+const NOW = new Date('2026-11-26T13:47:20')
+const STARTED_AT = new Date('2026-11-20T10:00:00')
+
+/** The phone answers `today` for the current day and `yesterday` for the previous one. */
+function mockSteps({ today, yesterday }: { today: number; yesterday: number }) {
+  jest.mocked(getStepsBetween).mockImplementation(async (_, end) => (end.getTime() > NOW.getTime() - 1000 ? today : yesterday))
+}
+
 describe('first route', () => {
   beforeEach(async () => {
     await AsyncStorage.clear()
     db.delete(validations).run()
+    jest.mocked(getStepsBetween).mockReset()
   })
 
-  it('opens the onboarding on a first launch', async () => {
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('opens the onboarding on a first launch, without reading the steps', async () => {
     await renderRouter(ROUTES)
 
     expect(await screen.findByLabelText('Étape 1 sur 4')).toBeTruthy()
     expect(screen).toHavePathname('/onboarding/welcome')
+    expect(getStepsBetween).not.toHaveBeenCalled()
   })
 
   describe('once the onboarding is done', () => {
     beforeEach(async () => {
       await preferencesRepository.setOnboardingDone(true)
+      // the carousel does not depend on the steps of the day
+      jest.mocked(getStepsBetween).mockResolvedValue(0)
     })
 
     it('shows the first image, new, and the next one locked', async () => {
@@ -105,6 +129,106 @@ describe('first route', () => {
 
       await swipeTo(5)
       expect(screen.getByText('02 - L’ÉTOILE', HIDDEN)).toBeTruthy()
+    })
+  })
+
+  describe('home screen', () => {
+    beforeEach(async () => {
+      jest.useFakeTimers({ now: NOW, doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] })
+      await preferencesRepository.setOnboardingDone(true, STARTED_AT)
+    })
+
+    it('shows the steps to validate and the time left before the reset', async () => {
+      mockSteps({ today: 4230, yesterday: 0 })
+
+      await renderRouter(ROUTES)
+
+      expect(await screen.findByText('4230')).toBeTruthy()
+      expect(screen.getByLabelText('Compteur du jour : 4230 pas à valider')).toBeTruthy()
+      expect(screen.getByText('06:12:40')).toBeTruthy()
+      expect(screen).toHavePathname('/')
+      // the day started at yesterday's reset time
+      expect(getStepsBetween).toHaveBeenCalledWith(new Date('2026-11-25T20:00:00'), NOW)
+    })
+
+    it('counts only the steps after the last validation of the day', async () => {
+      validationsRepository.add([{ imageNumber: 1, pixels: 42 }], new Date('2026-11-26T09:00:00'))
+      mockSteps({ today: 300, yesterday: 0 })
+
+      await renderRouter(ROUTES)
+
+      expect(await screen.findByText('300')).toBeTruthy()
+      expect(getStepsBetween).toHaveBeenCalledTimes(1)
+      expect(getStepsBetween).toHaveBeenCalledWith(new Date('2026-11-26T09:00:00'), NOW)
+    })
+
+    it('says "DOMMAGE" when steps were lost at the last reset', async () => {
+      mockSteps({ today: 4230, yesterday: 1230 })
+
+      await renderRouter(ROUTES)
+
+      expect(await screen.findByText('DOMMAGE')).toBeTruthy()
+      expect(screen.getByText('Hier, 1 230 pas n’ont pas été validés.')).toBeTruthy()
+    })
+
+    it('says nothing about a loss under 100 steps, which could not be validated', async () => {
+      mockSteps({ today: 4230, yesterday: 99 })
+
+      await renderRouter(ROUTES)
+
+      await screen.findByText('4230')
+      expect(screen.queryByText('DOMMAGE')).toBeNull()
+    })
+
+    it('starts a new day at the reset time: the counter goes back to 0', async () => {
+      jest.setSystemTime(new Date('2026-11-26T19:59:58'))
+      jest.mocked(getStepsBetween).mockResolvedValue(4230)
+
+      await renderRouter(ROUTES)
+      expect(await screen.findByText('00:00:02')).toBeTruthy()
+
+      // at 20:00, the phone has no step yet for the new day
+      jest.mocked(getStepsBetween).mockResolvedValue(0)
+      await act(async () => {
+        jest.advanceTimersByTime(2000)
+      })
+
+      expect(await screen.findByText('0')).toBeTruthy()
+      expect(screen.getByText('24:00:00')).toBeTruthy()
+      expect(getStepsBetween).toHaveBeenCalledWith(new Date('2026-11-26T20:00:00'), expect.any(Date))
+    })
+
+    it('reads the steps again when the app comes back to the foreground', async () => {
+      const listeners: ((state: AppStateStatus) => void)[] = []
+      jest.spyOn(AppState, 'addEventListener').mockImplementation((_, listener) => {
+        listeners.push(listener)
+        return { remove: jest.fn() }
+      })
+      jest.mocked(getStepsBetween).mockResolvedValue(4230)
+
+      await renderRouter(ROUTES)
+      await screen.findByText('4230')
+
+      jest.mocked(getStepsBetween).mockResolvedValue(5120)
+      await act(async () => {
+        for (const listener of listeners) listener('active')
+      })
+
+      expect(await screen.findByText('5120')).toBeTruthy()
+    })
+
+    it('offers to retry when the steps cannot be read, and reads them again on retry', async () => {
+      // React logs the caught error: keep the test output readable
+      jest.spyOn(console, 'error').mockImplementation(() => {})
+      jest.mocked(getStepsBetween).mockRejectedValue(new Error('Health Connect is not available'))
+
+      await renderRouter(ROUTES)
+      expect(await screen.findByRole('header', { name: 'OUPS' })).toBeTruthy()
+
+      jest.mocked(getStepsBetween).mockResolvedValue(4230)
+      await fireEvent.press(screen.getByRole('button', { name: 'RÉESSAYER' }))
+
+      expect(await screen.findByText('4230')).toBeTruthy()
     })
   })
 })

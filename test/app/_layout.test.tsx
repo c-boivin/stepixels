@@ -11,6 +11,9 @@ import { preferencesRepository } from '~/repositories/preferences.repository'
 // the migrations run on the in-memory database elsewhere: here, only their result matters
 jest.mock('drizzle-orm/expo-sqlite/migrator', () => ({ useMigrations: jest.fn() }))
 
+// the home screen reads the steps of the day: here, only the screen that opens matters
+jest.mock('~/lib/steps', () => ({ getStepsBetween: jest.fn().mockResolvedValue(0) }))
+
 const ROUTES = { _layout: { default: RootLayout, ErrorBoundary }, index: HomePage }
 const LAUNCH_LABEL = 'Stepixels se prépare'
 // the home screen: its first image, nothing validated yet

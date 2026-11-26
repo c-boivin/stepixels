@@ -23,6 +23,19 @@
     "leaf": "LA FEUILLE"
   },
   "home": {
+    "title": "STEPIXELS",
+    "counter": {
+      "title": "COMPTEUR DU JOUR",
+      "summary": "Compteur du jour : %{steps} pas à valider"
+    },
+    "lost": {
+      "title": "DOMMAGE",
+      "description": "Hier, %{steps} pas n’ont pas été validés."
+    },
+    "countdown": {
+      "title": "TEMPS RESTANT",
+      "summary": "Temps restant avant la remise à zéro : %{time}"
+    },
     "image": {
       "title": "%{number} - %{name}",
       "tag": {
