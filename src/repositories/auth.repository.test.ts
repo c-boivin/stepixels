@@ -7,7 +7,7 @@ import { preferencesRepository } from '~/repositories/preferences.repository'
 
 // the Supabase client needs the .env keys and the network: only its answers matter here
 jest.mock('~/lib/supabase', () => ({
-  supabase: { auth: { signUp: jest.fn(), signInWithPassword: jest.fn() } },
+  supabase: { auth: { signUp: jest.fn(), signInWithPassword: jest.fn(), getSession: jest.fn() } },
 }))
 
 const SESSION = { access_token: 'token' }
@@ -76,5 +76,13 @@ describe('authRepository', () => {
 
     jest.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({ data: {}, error: new AuthRetryableFetchError('Failed to fetch', 0) } as never)
     await expect(authRepository.signIn(FORM)).rejects.toMatchObject({ kind: 'offline' })
+  })
+
+  it('gives the e-mail of the signed-in user, or null for a guest', async () => {
+    jest.mocked(supabase.auth.getSession).mockResolvedValueOnce({ data: { session: { user: { email: 'camille@exemple.fr' } } } } as never)
+    expect(await authRepository.getEmail()).toBe('camille@exemple.fr')
+
+    jest.mocked(supabase.auth.getSession).mockResolvedValueOnce({ data: { session: null } } as never)
+    expect(await authRepository.getEmail()).toBeNull()
   })
 })

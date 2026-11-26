@@ -68,6 +68,16 @@ export const authRepository = {
     }
   },
 
+  /**
+   * E-mail of the signed-in user, or `null` for a guest, from the session kept on the phone.
+   * The client may refresh an expired token over the network first: offline, after a long time,
+   * the session can then read as missing.
+   */
+  async getEmail(): Promise<string | null> {
+    const { data } = await supabase.auth.getSession()
+    return data.session?.user.email ?? null
+  },
+
   async signIn({ email, password }: SignInForm): Promise<void> {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })

@@ -1,4 +1,4 @@
-import { useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useState, useTransition } from 'react'
 
 type Request<T> = (signal: AbortSignal) => Promise<T>
 
@@ -16,11 +16,13 @@ export function useRequest<T>(request: Request<T>) {
   const [current, setCurrent] = useState(() => startRequest(request))
   const [isPending, startTransition] = useTransition()
 
-  function refresh() {
+  // the same function across renders: a screen can refresh from an effect (focus, AppState)
+  // without that effect running again after each refresh
+  const refresh = useCallback(() => {
     startTransition(() => {
       setCurrent(startRequest(request))
     })
-  }
+  }, [request])
 
   useEffect(() => {
     return () => current.controller.abort()
