@@ -1,4 +1,4 @@
-import { getImagesProgress, getUnlockedImageFromValidations, splitPixels } from '~/lib/progress'
+import { canUnlockImage, getImagesProgress, getUnlockedImageFromValidations, splitPixels } from '~/lib/progress'
 
 // three small images: 4, 4 and 9 cells
 const IMAGES = [
@@ -160,3 +160,18 @@ describe('getUnlockedImageFromValidations', () => {
   })
 })
 
+describe('canUnlockImage', () => {
+  const IMAGES = [
+    { number: 1, cells: [0, 0, 0, 0] },
+    { number: 2, cells: [0, 0, 0, 0] },
+  ]
+
+  it('unlocks an image only once the one before is finished', () => {
+    expect(canUnlockImage(IMAGES, [{ imageNumber: 1, pixels: 3 }], 2)).toBe(false)
+    expect(canUnlockImage(IMAGES, [{ imageNumber: 1, pixels: 3 }, { imageNumber: 1, pixels: 1 }], 2)).toBe(true)
+  })
+
+  it('never unlocks an image without one before it', () => {
+    expect(canUnlockImage(IMAGES, [], 1)).toBe(false)
+  })
+})

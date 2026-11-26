@@ -1,5 +1,5 @@
-import { Redirect, useRouter } from 'expo-router'
-import { Suspense, use, useState } from 'react'
+import { Redirect, useFocusEffect, useRouter } from 'expo-router'
+import { Suspense, use, useCallback, useRef, useState } from 'react'
 
 import { Home, type HomeDayParams, type HomeRevealParams } from '~/components/views/Home'
 import { Launch } from '~/components/views/Launch'
@@ -21,6 +21,8 @@ import type { ProgressValidation } from '~/lib/progress'
 export interface HomePageData {
   /** The home screen; `null` on a first launch: the user starts with the onboarding. */
   home: {
+    /** A guest's `SUIVANT` asks for an account first (#35). */
+    signedIn: boolean
     /** The images of the home carousel, from the validations saved on the phone. */
     images: HomeCarouselItemParams[]
     /** The steps of the day, the message above the carousel and the next reset. */
@@ -52,6 +54,18 @@ export default function HomePage() {
 
   // the steps (and their access) are read when the app opens and when it comes back, never live (R12)
   useAppActive(refreshOnce)
+
+  // back from the account or settings screens: an image may have been unlocked, an account signed in
+  const firstFocus = useRef(true)
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false
+        return
+      }
+      refresh()
+    }, [refresh]),
+  )
 
   return (
     <Suspense fallback={<Launch />}>
@@ -101,6 +115,11 @@ function FirstScreen({ page, onChange, onSaved }: FirstScreenProps) {
   }
 
   function onUnlock(number: number) {
+    // a guest keeps the images only with an account: it is created first, then the image is unlocked (#35)
+    if (home !== null && !home.signedIn) {
+      router.push({ pathname: '/account/sign-up', params: { unlock: String(number) } })
+      return
+    }
     preferencesRepository.unlockImage(number).then(onSaved, (error: unknown) => setFailure({ error }))
   }
 

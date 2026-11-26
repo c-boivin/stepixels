@@ -21,6 +21,7 @@ const KEYS = {
   unlockedImage: 'stepixels.unlocked_image',
   unlockedAt: 'stepixels.unlocked_at',
   factChoice: 'stepixels.fact_choice',
+  savedImage: 'stepixels.saved_image',
 }
 
 /** The last image the user can reveal (#31), and when it was unlocked. */
@@ -177,6 +178,22 @@ export const preferencesRepository = {
    * Unlocks the image `number` (`SUIVANT` on a finished image, #31). Never goes back: a second tap
    * on `SUIVANT`, while the screen is read again, does not unlock the image after it.
    */
+  /** The image unlocked by creating an account (#35): its message says "IMAGE SAUVEGARDÉE". */
+  async getSavedImage(): Promise<number | null> {
+    const number = Number(await AsyncStorage.getItem(KEYS.savedImage))
+    return Number.isInteger(number) && number > 0 ? number : null
+  },
+
+  async setSavedImage(number: number) {
+    await AsyncStorage.setItem(KEYS.savedImage, String(number))
+  },
+
+  /** Unlocks an image because the guest created an account or signed in to keep the previous one (#35). */
+  async unlockSavedImage(number: number) {
+    await this.unlockImage(number)
+    await this.setSavedImage(number)
+  },
+
   async unlockImage(number: number, at = new Date()) {
     if ((await this.getUnlockedImage()).number >= number) return
 

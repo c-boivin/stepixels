@@ -109,6 +109,10 @@
       "finished": {
         "title": "IMAGE TERMINÉE",
         "description": "%{complete} %{distance} de marche, bravo !"
+      },
+      "image_saved": {
+        "title": "IMAGE SAUVEGARDÉE",
+        "description": "Voici la %{number}, à toi de jouer."
       }
     },
     "finished_modal": {
@@ -235,6 +239,11 @@
       "wrong_credentials": "! E-mail ou mot de passe incorrect.",
       "offline": "! Pas de connexion. Réessaie.",
       "unknown": "! Ça n’a pas marché. Réessaie."
+    },
+    "save_image": {
+      "title": "GARDE\nTON IMAGE",
+      "subtitle": "Crée un compte pour sauvegarder\ntes images et débloquer la %{number}.",
+      "button": "CRÉER ET DÉBLOQUER"
     }
   },
   "settings": {

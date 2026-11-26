@@ -11,6 +11,11 @@ import { preferencesRepository } from '~/repositories/preferences.repository'
 // the home screen sends a validation at once: no Supabase in these tests
 jest.mock('~/lib/supabase', () => ({ supabase: {} }))
 
+// the account is read by the home screen: signed in here, so SUIVANT unlocks at once (#35)
+jest.mock('~/repositories/auth.repository', () => ({
+  authRepository: { getEmail: jest.fn().mockResolvedValue('camille@exemple.fr') },
+}))
+
 jest.mock('~/lib/steps', () => ({
   getStepsAccess: jest.fn(),
   requestStepsAccess: jest.fn(),
