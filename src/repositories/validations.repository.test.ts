@@ -94,11 +94,11 @@ describe('validationsRepository', () => {
     expect(validationsRepository.getUnsynced().map(({ id }) => id)).toEqual([second.id])
   })
 
-  it('replaces every validation with the restored ones, all sent already', () => {
+  it('replaces every validation with the restored ones, keeping their sent state', () => {
     validationsRepository.add([{ imageNumber: 1, pixels: 5 }])
 
     validationsRepository.replaceAll([
-      { id: 'from-account', imageNumber: 2, pixels: 4, steps: 400, validatedAt: '2026-11-20T18:00:00.000Z' },
+      { id: 'from-account', imageNumber: 2, pixels: 4, steps: 400, validatedAt: '2026-11-20T18:00:00.000Z', synced: true },
     ])
 
     expect(validationsRepository.getAll()).toEqual([

@@ -23,15 +23,16 @@ function tables({
   resetTime = '20:00:00' as string | null,
 }: { upsertError?: object | null; remote?: object[]; resetTime?: string | null } = {}) {
   const upsert = jest.fn().mockResolvedValue({ error: upsertError })
+  const byUser = jest.fn(() => ({ order: () => Promise.resolve({ data: remote, error: null }) }))
   jest.mocked(supabase.from).mockImplementation(((table: string) =>
     table === 'validations'
-      ? { upsert, select: () => ({ order: () => Promise.resolve({ data: remote, error: null }) }) }
+      ? { upsert, select: () => ({ eq: byUser }) }
       : {
           select: () => ({
             eq: () => ({ maybeSingle: () => Promise.resolve({ data: resetTime ? { reset_time: resetTime } : null, error: null }) }),
           }),
         }) as never)
-  return { upsert }
+  return { upsert, byUser }
 }
 
 describe('backupRepository', () => {
@@ -86,7 +87,7 @@ describe('backupRepository', () => {
   describe('restore', () => {
     it("replaces the guest's progress with the account's, and takes back its reset time", async () => {
       signedIn(USER_ID)
-      tables({
+      const { byUser } = tables({
         remote: [{ id: 'from-account', image_number: 2, pixels: 4, steps: 400, validated_at: '2026-11-20T18:00:00+00:00' }],
         resetTime: '07:30:00',
       })
@@ -94,6 +95,7 @@ describe('backupRepository', () => {
 
       await backupRepository.restore()
 
+      expect(byUser).toHaveBeenCalledWith('user_id', USER_ID)
       expect(validationsRepository.getAll()).toEqual([
         { id: 'from-account', imageNumber: 2, pixels: 4, steps: 400, validatedAt: '2026-11-20T18:00:00.000Z', synced: true },
       ])
@@ -114,8 +116,8 @@ describe('backupRepository', () => {
 
     it("restores before any send when a sign-in's restore failed: the guest's rows never reach the account", async () => {
       signedIn(USER_ID)
-      await backupRepository.beforeSignIn()
-      validationsRepository.add([{ imageNumber: 1, pixels: 5 }])
+      validationsRepository.add([{ imageNumber: 1, pixels: 5 }], new Date('2026-11-25T17:00:00.000Z'))
+      await backupRepository.beforeSignIn(new Date('2026-11-25T18:00:00.000Z'))
       const { upsert } = tables({
         remote: [{ id: 'from-account', image_number: 2, pixels: 4, steps: 400, validated_at: '2026-11-20T18:00:00+00:00' }],
       })
@@ -128,6 +130,24 @@ describe('backupRepository', () => {
       // once restored, the next sends are normal sends
       await backupRepository.sendPending()
       expect(upsert).not.toHaveBeenCalled()
+    })
+    it('keeps and sends the validations made after the sign-in while the restore waited', async () => {
+      signedIn(USER_ID)
+      validationsRepository.add([{ imageNumber: 1, pixels: 5 }], new Date('2026-11-25T17:00:00.000Z'))
+      await backupRepository.beforeSignIn(new Date('2026-11-25T18:00:00.000Z'))
+      const [afterSignIn] = validationsRepository.add([{ imageNumber: 2, pixels: 3 }], new Date('2026-11-25T19:00:00.000Z'))
+      const { upsert } = tables({
+        remote: [{ id: 'from-account', image_number: 2, pixels: 4, steps: 400, validated_at: '2026-11-20T18:00:00+00:00' }],
+      })
+
+      await backupRepository.sendPending()
+
+      expect(validationsRepository.getAll().map(({ id }) => id)).toEqual(['from-account', afterSignIn.id])
+      expect(upsert).toHaveBeenCalledWith([expect.objectContaining({ id: afterSignIn.id, user_id: USER_ID })], {
+        onConflict: 'id',
+        ignoreDuplicates: true,
+      })
+      expect(validationsRepository.getUnsynced()).toEqual([])
     })
   })
 })

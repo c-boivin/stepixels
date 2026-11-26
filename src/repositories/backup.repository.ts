@@ -53,6 +53,8 @@ async function restore(userId: string): Promise<void> {
     supabase
       .from('validations')
       .select('id, image_number, pixels, steps, validated_at')
+      // RLS already limits the rows to the account: this keeps it right if a policy changes
+      .eq('user_id', userId)
       .order('validated_at', { ascending: true }),
     supabase.from('profiles').select('reset_time').eq('id', userId).maybeSingle(),
   ])
@@ -63,20 +65,29 @@ async function restore(userId: string): Promise<void> {
   if (profile.data?.reset_time) await preferencesRepository.setResetTime(profile.data.reset_time.slice(0, 5))
 
   if (validations.data.length > 0) {
-    validationsRepository.replaceAll(
-      validations.data.map((row) => ({
+    // the validations made after the sign-in, while the restore waited (offline), belong to the
+    // account and were never sent: they stay, the guest's ones (before the sign-in) are replaced
+    const signInAt = await preferencesRepository.getRestorePendingSince()
+    const madeAfterSignIn = validationsRepository
+      .getUnsynced()
+      .filter(({ validatedAt }) => signInAt !== null && new Date(validatedAt) >= signInAt)
+
+    validationsRepository.replaceAll([
+      ...validations.data.map((row) => ({
         id: row.id,
         imageNumber: row.image_number,
         pixels: row.pixels,
         steps: row.steps,
         validatedAt: new Date(row.validated_at).toISOString(),
+        synced: true,
       })),
-    )
-  } else {
-    await send(userId)
+      ...madeAfterSignIn,
+    ])
   }
 
-  await preferencesRepository.setRestorePending(false)
+  await preferencesRepository.setRestorePendingSince(null)
+  // the guest's progress to an account that has none, or the validations kept above
+  await send(userId)
 }
 
 /**
@@ -87,15 +98,16 @@ async function restore(userId: string): Promise<void> {
 export const backupRepository = {
   /**
    * Call before signing in: until the account's progress has come back, nothing is sent, so the
-   * guest's rows never reach an account that already has progress.
+   * guest's rows never reach an account that already has progress. Saves when, so that the
+   * validations made after the sign-in are kept by the restore.
    */
-  async beforeSignIn(): Promise<void> {
-    await preferencesRepository.setRestorePending(true)
+  async beforeSignIn(at = new Date()): Promise<void> {
+    await preferencesRepository.setRestorePendingSince(at)
   },
 
   /** Call when a sign-in failed: the guest stays a guest, its queue can be sent again later. */
   async signInFailed(): Promise<void> {
-    await preferencesRepository.setRestorePending(false)
+    await preferencesRepository.setRestorePendingSince(null)
   },
 
   /**
@@ -108,15 +120,15 @@ export const backupRepository = {
     return oneAtATime(async () => {
       const userId = await getUserId()
       if (userId === null) return
-      if (await preferencesRepository.getRestorePending()) return restore(userId)
+      if ((await preferencesRepository.getRestorePendingSince()) !== null) return restore(userId)
       return send(userId)
     })
   },
 
   /**
    * After a sign-in: brings back the account's validations and reset time. When the account
-   * already has progress, it replaces the guest's (OQ-17); when it has none, the guest's
-   * progress is sent to it instead. Throws when Supabase cannot be reached: it is tried again
+   * already has progress, it replaces the guest's (OQ-17), except the validations made after the
+   * sign-in, which are kept and sent; when it has none, the guest's progress is sent to it instead. Throws when Supabase cannot be reached: it is tried again
    * at the next send, before anything is sent.
    */
   restore(): Promise<void> {

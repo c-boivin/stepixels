@@ -87,13 +87,13 @@ export const validationsRepository = {
   },
 
   /**
-   * Replaces every validation of the phone with these ones, already on Supabase (restored after a
-   * sign-in: the account's progress wins), all at once or not at all.
+   * Replaces every validation of the phone with these ones (restored after a sign-in: the
+   * account's progress wins), all at once or not at all. Each row keeps its `synced` state.
    */
-  replaceAll(rows: Omit<Validation, 'synced'>[]) {
+  replaceAll(rows: Validation[]) {
     db.transaction((tx) => {
       tx.delete(validations).run()
-      for (const row of rows) tx.insert(validations).values({ ...row, synced: true }).run()
+      for (const row of rows) tx.insert(validations).values(row).run()
     })
   },
 }
