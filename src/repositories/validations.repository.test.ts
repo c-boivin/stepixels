@@ -106,4 +106,12 @@ describe('validationsRepository', () => {
     ])
     expect(validationsRepository.getUnsynced()).toEqual([])
   })
+
+  it('deletes every validation of the phone', () => {
+    validationsRepository.add([{ imageNumber: 1, pixels: 5 }])
+
+    validationsRepository.clear()
+
+    expect(validationsRepository.getAll()).toEqual([])
+  })
 })

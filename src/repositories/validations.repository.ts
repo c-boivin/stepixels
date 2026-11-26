@@ -29,6 +29,11 @@ export const validationsRepository = {
       .all()
   },
 
+  /** Deletes every validation of the phone: after a sign-out, the app starts again as a guest (#41). */
+  clear() {
+    db.delete(validations).run()
+  },
+
   /** Time of the last validation, `null` before the first one: the daily counter starts after it (R3). */
   getLastValidatedAt(): Date | null {
     const last = db

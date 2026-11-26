@@ -81,6 +81,7 @@ export default function SettingsPage() {
         onPedometerPress={onPedometerPress}
         onSignUp={() => router.push('/account/sign-up')}
         onSignIn={() => router.push('/account/sign-in')}
+        onSignOut={() => router.push('/account/sign-out')}
       />
     </Suspense>
   )

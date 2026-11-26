@@ -22,6 +22,7 @@ const KEYS = {
   unlockedAt: 'stepixels.unlocked_at',
   factChoice: 'stepixels.fact_choice',
   savedImage: 'stepixels.saved_image',
+  lastValidatedAt: 'stepixels.last_validated_at',
 }
 
 /** The last image the user can reveal (#31), and when it was unlocked. */
@@ -158,6 +159,21 @@ export const preferencesRepository = {
     await AsyncStorage.setItem(KEYS.factChoice, JSON.stringify(choice))
   },
 
+  /**
+   * Time of the last validation, kept when the validations leave the phone (sign-out, #41): the
+   * daily counter and "DOMMAGE" still start after it, so the same steps are never validated twice.
+   */
+  async getLastValidatedAt(): Promise<Date | null> {
+    const value = await AsyncStorage.getItem(KEYS.lastValidatedAt)
+    const date = value === null ? null : new Date(value)
+    return date !== null && Number.isFinite(date.getTime()) ? date : null
+  },
+
+  async setLastValidatedAt(at: Date | null) {
+    if (at === null) await AsyncStorage.removeItem(KEYS.lastValidatedAt)
+    else await AsyncStorage.setItem(KEYS.lastValidatedAt, at.toISOString())
+  },
+
   async setStepsAccessAsked(asked: boolean) {
     await AsyncStorage.setItem(KEYS.stepsAccessAsked, String(asked))
   },
@@ -205,5 +221,10 @@ export const preferencesRepository = {
       [KEYS.unlockedAt, at.toISOString()],
     ])
     return true
+  },
+
+  /** Back to image 01, as on a first launch: the guest after a sign-out (#41) starts again there. */
+  async forgetUnlockedImage() {
+    await AsyncStorage.multiRemove([KEYS.unlockedImage, KEYS.unlockedAt, KEYS.savedImage])
   },
 }

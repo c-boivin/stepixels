@@ -45,7 +45,8 @@ export async function getHomePage(): Promise<HomePageData> {
   const { counter, lost, nextReset } = getDayWindows({
     resetTime,
     now,
-    lastValidatedAt: lastValidation?.validatedAt ?? null,
+    // after a sign-out, the validations left the phone but their time is kept (#41)
+    lastValidatedAt: latestOf(lastValidation?.validatedAt ?? null, await preferencesRepository.getLastValidatedAt()),
     startedAt,
   })
 
@@ -165,6 +166,13 @@ async function getFactOfTheDay(steps: number | null, nextReset: Date) {
   const choice = chooseFact(steps, nextReset.toISOString(), kept)
   if (choice !== null && choice !== kept) await preferencesRepository.setFactChoice(choice)
   return choice?.fact ?? null
+}
+
+/** The later of two dates, `null` when both are missing. */
+function latestOf(a: Date | null, b: Date | null): Date | null {
+  if (a === null) return b
+  if (b === null) return a
+  return a > b ? a : b
 }
 
 type Window = { start: Date; end: Date }

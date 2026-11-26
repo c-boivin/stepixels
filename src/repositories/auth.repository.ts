@@ -22,6 +22,13 @@ export class AccountError extends Error {
   }
 }
 
+/**
+ * Longest wait for the server at sign-out. The session is removed before the revoke request,
+ * unless Supabase first has to refresh an expired token: on a very slow network, that refresh
+ * can outlast this wait.
+ */
+const SIGN_OUT_WAIT_MS = 2_000
+
 /** Turns what Supabase Auth throws or returns into one of the cases the screens show. */
 export function toAccountError(error: unknown): AccountError {
   if (error instanceof AccountError) return error
@@ -80,6 +87,19 @@ export const authRepository = {
     // is signed in all the same, so the e-mail kept at sign-in is used
     if (error && isAuthRetryableFetchError(error)) return preferencesRepository.getAccountEmail()
     return null
+  },
+
+  /**
+   * Signs out of this phone (#41): the session leaves SecureStore at once, even offline
+   * (`scope: 'local'`), and the e-mail kept for offline use is forgotten; the server is told
+   * when it can be reached. Never throws.
+   */
+  async signOut(): Promise<void> {
+    // the local session is removed before the request; on a slow network, the request to the
+    // server is not waited for more than SIGN_OUT_WAIT_MS
+    const request = supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+    await Promise.race([request, new Promise((resolve) => setTimeout(resolve, SIGN_OUT_WAIT_MS))])
+    await preferencesRepository.setAccountEmail(null)
   },
 
   async signIn({ email, password }: SignInForm): Promise<void> {
