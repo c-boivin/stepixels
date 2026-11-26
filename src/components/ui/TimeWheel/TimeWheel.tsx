@@ -64,6 +64,22 @@ export function TimeWheel({ times, value, onChange, accessibilityLabel }: TimeWh
     select(clamp(Math.round(event.nativeEvent.contentOffset.y / ROW_HEIGHT), 0, times.length - 1))
   }
 
+  // safety net: if the wheel still stops between two times (iOS ignored the snap points),
+  // move it to the closest time
+  function snapToClosest(y: number) {
+    const offset = clamp(Math.round(y / ROW_HEIGHT), 0, times.length - 1) * ROW_HEIGHT
+    if (Math.abs(y - offset) > 0.5) list.current?.scrollToOffset({ offset, animated: true })
+  }
+
+  function onScrollEndDrag(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    // released without a throw: no momentum will follow, so no onMomentumScrollEnd
+    if (Math.abs(event.nativeEvent.velocity?.y ?? 0) < 0.1) snapToClosest(event.nativeEvent.contentOffset.y)
+  }
+
+  function onMomentumScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    snapToClosest(event.nativeEvent.contentOffset.y)
+  }
+
   // screen reader: swipe up = next time, swipe down = previous time
   function onAccessibilityAction(event: AccessibilityActionEvent) {
     const step = event.nativeEvent.actionName === 'increment' ? 1 : -1
@@ -92,9 +108,11 @@ export function TimeWheel({ times, value, onChange, accessibilityLabel }: TimeWh
         contentOffset={{ x: 0, y: selectedIndex * ROW_HEIGHT }}
         contentContainerStyle={STYLES.content}
         showsVerticalScrollIndicator={false}
-        // stop on a time, one time at a time
-        snapToInterval={ROW_HEIGHT}
+        // stop on a time: the exact snap points, more reliable on iOS than snapToInterval
+        snapToOffsets={times.map((_, index) => index * ROW_HEIGHT)}
         decelerationRate="fast"
+        onScrollEndDrag={onScrollEndDrag}
+        onMomentumScrollEnd={onMomentumScrollEnd}
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: true,
