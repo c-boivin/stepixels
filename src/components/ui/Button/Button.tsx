@@ -10,10 +10,12 @@ export interface ButtonProps {
   onPress?: () => void
   /** Read by the screen reader when the result of the action is not obvious. */
   accessibilityHint?: string
+  /** `primary` (default): orange. `secondary`: outlined, on the background (`REVENIR À L’IMAGE EN COURS`). */
+  variant?: 'primary' | 'secondary'
 }
 
-/** The primary button of the design: orange, full width, 56 high (Figma component "Bouton", type Primaire). */
-export function Button({ label, value, onPress, accessibilityHint }: ButtonProps) {
+/** The button of the design: full width, 56 high (Figma component "Bouton"), orange or outlined. */
+export function Button({ label, value, onPress, accessibilityHint, variant = 'primary' }: ButtonProps) {
   const colors = useColors()
 
   return (
@@ -25,7 +27,9 @@ export function Button({ label, value, onPress, accessibilityHint }: ButtonProps
       style={({ pressed }) => [
         STYLES.button,
         value !== undefined && STYLES.withValue,
-        { backgroundColor: colors.accent },
+        variant === 'primary'
+          ? { backgroundColor: colors.accent }
+          : [STYLES.secondary, { backgroundColor: colors.background, borderColor: colors.text }],
         pressed && STYLES.pressed,
       ]}>
       <Text style={[TYPO.button14, { color: colors.text }]}>{label}</Text>
@@ -43,6 +47,7 @@ const STYLES = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  secondary: { borderWidth: 1 },
   withValue: {
     justifyContent: 'space-between',
     paddingHorizontal: 16,

@@ -22,6 +22,30 @@
     "star": "L’ÉTOILE",
     "leaf": "LA FEUILLE"
   },
+  "home": {
+    "image": {
+      "title": "%{number} - %{name}",
+      "tag": {
+        "current": "EN COURS",
+        "new": "NOUVELLE",
+        "finished": "TERMINÉE"
+      },
+      "summary": {
+        "in_progress": {
+          "zero": "%{title}, aucun pixel révélé sur %{total}",
+          "one": "%{title}, 1 pixel révélé sur %{total}",
+          "other": "%{title}, %{revealed} pixels révélés sur %{total}"
+        },
+        "finished": "%{title}, terminée en %{steps} pas",
+        "locked": "%{title}, verrouillée"
+      }
+    },
+    "carousel": {
+      "label": "Tes images",
+      "back": "REVENIR À L’IMAGE EN COURS",
+      "back_value": "→"
+    }
+  },
   "onboarding": {
     "welcome": {
       "step": "1 / 4",
