@@ -23,16 +23,19 @@ interface PixelData {
 
 /** One image of the catalogue, shipped with the app so it works offline. */
 export interface CatalogueImage extends PixelData {
-  /** Key of the image's name in `fr.json` (`LE CHAMPIGNON`). */
-  nameKey: string
+  /**
+   * Key of the image's texts in `fr.json`: `<textKey>.name` (`LE CHAMPIGNON`) and
+   * `<textKey>.complete` (`Le champignon est complet.`, a sentence: French names have a gender).
+   */
+  textKey: string
   /** The original PNG, shown when the image is finished. */
   source: ImageRequireSource
   /** Steps to reveal the whole image: number of cells × `STEPS_PER_PIXEL`. */
   steps: number
 }
 
-function catalogueImage(nameKey: string, data: PixelData, source: ImageRequireSource): CatalogueImage {
-  return { ...data, nameKey, source, steps: data.cells.length * STEPS_PER_PIXEL }
+function catalogueImage(textKey: string, data: PixelData, source: ImageRequireSource): CatalogueImage {
+  return { ...data, textKey, source, steps: data.cells.length * STEPS_PER_PIXEL }
 }
 
 /** Every image, in the order they are revealed. */

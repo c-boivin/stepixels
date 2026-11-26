@@ -30,6 +30,8 @@ export interface HomeCarouselItemParams extends PixelGridParams {
   steps: string | null
   /** Everything the card shows, read as one sentence by the screen reader. */
   summary: string
+  /** The reveal animation runs on this card (#29): an orange line instead of the next pixel. */
+  revealing?: boolean
 }
 
 export interface HomeCarouselProps {
@@ -112,7 +114,9 @@ export function HomeCarousel({ items, index, onIndexChange }: HomeCarouselProps)
               {...gridOf(item)}
               size={CARD}
               tag={item.tag ?? undefined}
-              showNext={item.state === 'current'}
+              // the next pixel is marked on a new image too (Figma "Nouvelle image", #31)
+              showNext={(item.state === 'current' || item.state === 'new') && !item.revealing}
+              revealLine={item.revealing}
               locked={item.state === 'locked'}
               focus={focus}
             />

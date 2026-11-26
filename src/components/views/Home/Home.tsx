@@ -5,13 +5,18 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Button } from '~/components/ui/Button'
 import { TopBar } from '~/components/ui/TopBar'
 import { HomeCarousel } from './HomeCarousel'
+import { HomeFinishedModal } from './HomeFinishedModal'
 
 import { useCountdown } from '~/hooks/useCountdown'
+import { useReduceMotion } from '~/hooks/useReduceMotion'
+import { useTimeline } from '~/hooks/useTimeline'
 
 import { i18n } from '~/lib/i18n'
 import { openStepsSettings, requestStepsAccess, type StepsAccess } from '~/lib/steps'
 
 import type { HomeCarouselItemParams } from './HomeCarousel'
+import type { HomeFinishedModalParams } from './HomeFinishedModal'
+import type { TimelineRun } from '~/hooks/useTimeline'
 
 import { TYPO, useColors } from '~/styles/theme'
 
@@ -20,6 +25,17 @@ import { TYPO, useColors } from '~/styles/theme'
  * (#27). A long message (big number, bigger system font) makes it grow instead of covering the carousel.
  */
 const MESSAGE_MIN_HEIGHT = 68
+/** Length of the reveal animation (#29): 40 ms per pixel, between 1.5 and 3 seconds. */
+const REVEAL_MS_PER_PIXEL = 40
+const REVEAL_MIN_MS = 1500
+const REVEAL_MAX_MS = 3000
+
+/** The message above the carousel: an overline and a sentence. */
+export interface HomeMessageParams {
+  /** `DOMMAGE`, `VALIDÉ`, `NOUVELLE IMAGE`, `IMAGE TERMINÉE` */
+  title: string
+  description: string
+}
 
 /** The day shown on the home screen (#27, #30). */
 export interface HomeDayParams {
@@ -27,15 +43,40 @@ export interface HomeDayParams {
   stepsAccess: StepsAccess
   /** Steps to validate, digits only (`4230`); `null` when they cannot be read (`stepsAccess`). */
   counter: string | null
-  /** Steps lost at the last reset, formatted (`1 230`); `null` when there is no "DOMMAGE" to show. */
-  lostSteps: string | null
+  /** The message above the carousel ("DOMMAGE", "VALIDÉ"…); `null` when there is none. */
+  message: HomeMessageParams | null
+  /** Steps on the `VALIDER` button: `4 230 PAS`. */
+  validateValue: string
   /** End of the current day, where the countdown reaches 0. */
   nextReset: Date
+}
+
+/** What `VALIDER` reveals (#29), ready for the animation. */
+export interface HomeRevealParams {
+  /** The image being revealed, where the animation runs. */
+  imageNumber: number
+  /** The counter at `progress` (0 to 1) of the animation: from the steps of the day down to `0`. */
+  counterAt: (progress: number) => string
+  /** `+42 PIXELS`, on the button while the pixels appear. */
+  pixels: string
+  /** Revealed cells of the image before the validation, and after. */
+  revealedFrom: number
+  revealedTo: number
+  /** The modal shown after the animation, when the validation finishes the image (#31). */
+  finished: HomeFinishedModalParams | null
 }
 
 export interface HomeProps extends HomeDayParams {
   /** The images of the carousel: finished ones, the one being revealed, then the locked one. */
   images: HomeCarouselItemParams[]
+  /** What `VALIDER` would reveal; `null` disables it (under 100 steps). */
+  reveal: HomeRevealParams | null
+  /** Number of the image `SUIVANT` unlocks, when the image being revealed is finished (#31). */
+  unlock: number | null
+  /** Saves the validation; returns `false` when nothing was saved, so that nothing is animated. */
+  onValidate: () => boolean
+  /** `SUIVANT`: unlocks the image `number`. */
+  onUnlock: (number: number) => void
   /** Called when the countdown reaches 0: a new day starts, the data must be read again (#30). */
   onDayEnd: () => void
   /** Called after the user answered the steps access dialog: the steps must be read again. */
@@ -45,29 +86,65 @@ export interface HomeProps extends HomeDayParams {
 }
 
 /**
- * The home screen: the steps to validate and the message of the day (#27), the image carousel (#28)
- * and the time left before the reset (#27, #30). The VALIDER button (#29) comes under the countdown.
+ * The home screen: the steps to validate and the message of the day (#27), the image carousel (#28),
+ * the time left before the reset (#27, #30), and `VALIDER`, which reveals the pixels row by row (#29),
+ * then celebrates a finished image and unlocks the next one with `SUIVANT` (#31).
  */
 export function Home({
   images,
   stepsAccess,
   counter,
-  lostSteps,
+  message,
+  validateValue,
   nextReset,
+  reveal,
+  unlock,
+  onValidate,
+  onUnlock,
   onDayEnd,
   onStepsAccessChange,
   onSettingsPress,
 }: HomeProps) {
   const colors = useColors()
   const countdown = useCountdown(nextReset, onDayEnd)
-  // the image being revealed, or the last one once every image is finished
-  const revealing = images.findIndex(({ state }) => state === 'current' || state === 'new')
-  const currentIndex = revealing >= 0 ? revealing : images.length - 1
+  const reduceMotion = useReduceMotion()
+  // the validation being animated: kept here, since the data is read again as soon as it is saved
+  const [revealing, setRevealing] = useState<{ reveal: HomeRevealParams; run: TimelineRun } | null>(null)
+  const [finished, setFinished] = useState<HomeFinishedModalParams | null>(null)
+  const progress = useTimeline(revealing?.run ?? null, () => {
+    setFinished(revealing?.reveal.finished ?? null)
+    setRevealing(null)
+  })
+
+  // the image being revealed; else the finished image waiting for `SUIVANT`, or the last one
+  const inProgress = images.findIndex(({ state }) => state === 'current' || state === 'new')
+  const currentIndex = inProgress >= 0 ? inProgress : images.findLastIndex(({ state }) => state !== 'locked')
   // the card the user swiped to, or `null` when on the image being revealed: if a validation
   // moves the image being revealed, the carousel follows it
   const [browsed, setBrowsed] = useState<number | null>(null)
   const index = browsed ?? currentIndex
-  const inFront = images[index]
+  const items = revealing === null ? images : images.map((item) => revealedItem(item, revealing.reveal, progress))
+  const inFront = items[index]
+  const shownCounter = revealing === null ? counter : revealing.reveal.counterAt(progress)
+  const shownMessage: HomeMessageParams | null =
+    revealing === null
+      ? message
+      : { title: i18n.t('home.message.revealing.title'), description: i18n.t('home.message.revealing.description') }
+
+  function onValidatePress() {
+    if (reveal === null || revealing !== null || !onValidate()) return
+
+    setBrowsed(null)
+    const pixels = reveal.revealedTo - reveal.revealedFrom
+    const duration = reduceMotion ? 0 : Math.min(Math.max(pixels * REVEAL_MS_PER_PIXEL, REVEAL_MIN_MS), REVEAL_MAX_MS)
+    setRevealing({ reveal, run: { startedAt: Date.now(), duration } })
+  }
+
+  function onModalNext() {
+    const next = finished?.next ?? null
+    setFinished(null)
+    if (next !== null) onUnlock(next)
+  }
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={[STYLES.screen, { backgroundColor: colors.background }]}>
@@ -87,12 +164,12 @@ export function Home({
           accessibilityLiveRegion="polite"
           style={STYLES.counter}>
           <Text style={[TYPO.overline12, { color: colors.muted }]}>{i18n.t('home.counter.title')}</Text>
-          <Text style={[TYPO.number80, { color: colors.text }]}>{counter ?? i18n.t('home.counter.unavailable')}</Text>
+          <Text style={[TYPO.number80, { color: colors.text }]}>{shownCounter ?? i18n.t('home.counter.unavailable')}</Text>
         </View>
 
         <View style={STYLES.message}>
           {/* the "Le saviez-vous ?" fact (#32) takes this place when there is no loss to show */}
-          {stepsAccess !== 'granted' && (
+          {stepsAccess !== 'granted' && unlock === null && (
             <View accessible style={STYLES.messageContent}>
               <Text style={[TYPO.overline12, { color: colors.accentText }]}>
                 {i18n.t('home.steps_access.title')}
@@ -102,12 +179,10 @@ export function Home({
               </Text>
             </View>
           )}
-          {lostSteps !== null && (
+          {(stepsAccess === 'granted' || unlock !== null) && shownMessage !== null && (
             <View accessible style={STYLES.messageContent}>
-              <Text style={[TYPO.overline12, { color: colors.accentText }]}>{i18n.t('home.lost.title')}</Text>
-              <Text style={[TYPO.fact17, STYLES.centered, { color: colors.text }]}>
-                {i18n.t('home.lost.description', { steps: lostSteps })}
-              </Text>
+              <Text style={[TYPO.overline12, { color: colors.accentText }]}>{shownMessage.title}</Text>
+              <Text style={[TYPO.fact17, STYLES.centered, { color: colors.text }]}>{shownMessage.description}</Text>
             </View>
           )}
         </View>
@@ -115,7 +190,7 @@ export function Home({
 
       <View style={STYLES.content}>
         <HomeCarousel
-          items={images}
+          items={items}
           index={index}
           onIndexChange={(next) => setBrowsed(next === currentIndex ? null : next)}
         />
@@ -142,6 +217,12 @@ export function Home({
               value={i18n.t('home.carousel.back_value')}
               onPress={() => setBrowsed(null)}
             />
+          ) : revealing !== null ? (
+            // outlined while the pixels appear: pressing it does nothing
+            <Button variant="secondary" label={i18n.t('home.validate.validating')} value={revealing.reveal.pixels} />
+          ) : unlock !== null ? (
+            // unlocking needs no steps: shown even without the steps access
+            <Button label={i18n.t('home.unlock.button')} value={i18n.t('home.unlock.value')} onPress={() => onUnlock(unlock)} />
           ) : stepsAccess === 'blocked' ? (
             // only the settings can allow it (docs/conventions.md): coming back reads the steps again
             <Button
@@ -152,22 +233,42 @@ export function Home({
                 openStepsSettings().catch(() => {})
               }}
             />
+          ) : stepsAccess !== 'granted' ? (
+            // the system can still ask: one tap shows its dialog again
+            <Button
+              label={i18n.t('home.steps_access.allow_button')}
+              value={i18n.t('home.steps_access.button_value')}
+              onPress={() => {
+                requestStepsAccess().then(onStepsAccessChange, onStepsAccessChange)
+              }}
+            />
           ) : (
-            stepsAccess !== 'granted' && (
-              // the system can still ask: one tap shows its dialog again
-              <Button
-                label={i18n.t('home.steps_access.allow_button')}
-                value={i18n.t('home.steps_access.button_value')}
-                onPress={() => {
-                  requestStepsAccess().then(onStepsAccessChange, onStepsAccessChange)
-                }}
-              />
-            )
+            // disabled under 100 steps: validating would give 0 pixel (OQ-11)
+            <Button
+              label={i18n.t('home.validate.button')}
+              value={validateValue}
+              disabled={reveal === null}
+              onPress={onValidatePress}
+            />
           )}
         </View>
       </View>
+
+      <HomeFinishedModal image={finished} onNext={onModalNext} onClose={() => setFinished(null)} />
     </SafeAreaView>
   )
+}
+
+/** The image being revealed, as the animation draws it at `progress` (0 to 1): tag `VALIDATION`, an orange line. */
+function revealedItem(item: HomeCarouselItemParams, reveal: HomeRevealParams, progress: number): HomeCarouselItemParams {
+  if (item.number !== reveal.imageNumber) return item
+
+  return {
+    ...item,
+    revealed: reveal.revealedFrom + Math.round((reveal.revealedTo - reveal.revealedFrom) * progress),
+    tag: i18n.t('home.image.tag.validating'),
+    revealing: true,
+  }
 }
 
 const STYLES = StyleSheet.create({

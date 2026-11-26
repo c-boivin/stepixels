@@ -18,9 +18,18 @@
     "loading": "Stepixels se prépare"
   },
   "images": {
-    "mushroom": "LE CHAMPIGNON",
-    "star": "L’ÉTOILE",
-    "leaf": "LA FEUILLE"
+    "mushroom": {
+      "name": "LE CHAMPIGNON",
+      "complete": "Le champignon est complet."
+    },
+    "star": {
+      "name": "L’ÉTOILE",
+      "complete": "L’étoile est complète."
+    },
+    "leaf": {
+      "name": "LA FEUILLE",
+      "complete": "La feuille est complète."
+    }
   },
   "home": {
     "title": "STEPIXELS",
@@ -52,7 +61,8 @@
       "tag": {
         "current": "EN COURS",
         "new": "NOUVELLE",
-        "finished": "TERMINÉE"
+        "finished": "TERMINÉE",
+        "validating": "VALIDATION"
       },
       "summary": {
         "in_progress": {
@@ -68,7 +78,52 @@
       "label": "Tes images",
       "back": "REVENIR À L’IMAGE EN COURS",
       "back_value": "→"
-    }
+    },
+    "validate": {
+      "button": "VALIDER",
+      "value": "%{steps} PAS",
+      "validating": "VALIDATION…",
+      "pixels": {
+        "zero": "+0 PIXEL",
+        "one": "+1 PIXEL",
+        "other": "+%{pixels} PIXELS"
+      }
+    },
+    "unlock": {
+      "button": "SUIVANT",
+      "value": "→"
+    },
+    "message": {
+      "revealing": {
+        "title": "ÇA SE RÉVÈLE",
+        "description": "Ligne après ligne, tes pas deviennent des pixels."
+      },
+      "validated": {
+        "title": "VALIDÉ",
+        "description": "+%{steps} pas validés. Reviens quand tu veux."
+      },
+      "new_image": {
+        "title": "NOUVELLE IMAGE",
+        "description": "L’image %{number} est débloquée. À toi de la révéler."
+      },
+      "finished": {
+        "title": "IMAGE TERMINÉE",
+        "description": "%{complete} %{distance} de marche, bravo !"
+      }
+    },
+    "finished_modal": {
+      "title": "IMAGE TERMINÉE",
+      "summary": "%{steps} pas · %{days} · %{distance}",
+      "days": {
+        "zero": "0 jour",
+        "one": "1 jour",
+        "other": "%{count} jours"
+      },
+      "button": "SUIVANT",
+      "button_value": "→",
+      "close": "FERMER"
+    },
+    "distance": "%{km} km"
   },
   "onboarding": {
     "welcome": {

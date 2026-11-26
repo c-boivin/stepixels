@@ -2,7 +2,7 @@ import { CATALOGUE } from '~/data/images/catalogue'
 import fr from '~/data/messages/fr.json'
 import { STEPS_PER_PIXEL } from '~/lib/rules'
 
-/** The text of an i18n key (`images.mushroom`) in fr.json, or undefined when it is missing. */
+/** The text of an i18n key (`images.mushroom.name`) in fr.json, or undefined when it is missing. */
 function frText(key: string): unknown {
   return key.split('.').reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], fr)
 }
@@ -30,8 +30,9 @@ describe('CATALOGUE', () => {
     expect(image.steps).toBe(image.cells.length * STEPS_PER_PIXEL)
   })
 
-  it.each(CATALOGUE.map((image) => [image.number, image]))('image %i has a name in fr.json and its PNG', (_number, image) => {
-    expect(typeof frText(image.nameKey)).toBe('string')
+  it.each(CATALOGUE.map((image) => [image.number, image]))('image %i has a name and a sentence in fr.json and its PNG', (_number, image) => {
+    expect(typeof frText(`${image.textKey}.name`)).toBe('string')
+    expect(typeof frText(`${image.textKey}.complete`)).toBe('string')
     expect(image.source).toBeDefined()
   })
 })

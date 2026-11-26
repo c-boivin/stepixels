@@ -1,4 +1,4 @@
-import { formatCountdown, getDayStart, getDayWindows, isWorthShowingLoss } from '~/lib/day'
+import { countDays, formatCountdown, getDayStart, getDayWindows, isWorthShowingLoss } from '~/lib/day'
 
 // the tests run in the Europe/Paris time zone (test/global-setup.ts): dates without an offset are French times
 const at = (iso: string) => new Date(iso)
@@ -133,5 +133,25 @@ describe('formatCountdown', () => {
 
   it('shows 24:00:00 just after the reset', () => {
     expect(formatCountdown(at('2026-11-27T20:00:00'), at('2026-11-26T20:00:00'))).toBe('24:00:00')
+  })
+})
+
+describe('countDays', () => {
+  it('counts one day for validations between two resets, even across midnight', () => {
+    expect(countDays([new Date('2026-11-25T21:00:00'), new Date('2026-11-26T08:00:00')], '20:00')).toBe(1)
+  })
+
+  it('counts two days for validations on each side of the reset time', () => {
+    expect(countDays([new Date('2026-11-26T19:00:00'), new Date('2026-11-26T21:00:00')], '20:00')).toBe(2)
+  })
+
+  it('counts each day once, whatever the number of validations', () => {
+    const dates = ['2026-11-23T10:00:00', '2026-11-23T12:00:00', '2026-11-24T10:00:00', '2026-11-26T10:00:00']
+
+    expect(countDays(dates.map((date) => new Date(date)), '20:00')).toBe(3)
+  })
+
+  it('counts no day without a validation', () => {
+    expect(countDays([], '20:00')).toBe(0)
   })
 })

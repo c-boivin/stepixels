@@ -66,6 +66,15 @@ export function getDayStart(resetTime: string, now: Date): Date {
   return today <= now ? today : shiftDay(today, -1, resetTime)
 }
 
+/**
+ * Number of game days among `dates` (OQ-14: the days with a validation of an image): two dates
+ * count as one day when no reset time passed between them, whatever the calendar day.
+ * Uses the current reset time: a day before a change of reset time may be counted a bit differently.
+ */
+export function countDays(dates: readonly Date[], resetTime: string): number {
+  return new Set(dates.map((date) => getDayStart(resetTime, date).getTime())).size
+}
+
 /** Time left before `target`, as `HH:MM:SS` (`06:12:40`); `00:00:00` once it has passed. */
 export function formatCountdown(target: Date, now: Date): string {
   const seconds = Math.max(0, Math.ceil((target.getTime() - now.getTime()) / 1000))
