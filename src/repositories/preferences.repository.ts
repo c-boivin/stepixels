@@ -7,6 +7,7 @@ const KEYS = {
   onboardingDone: 'stepixels.onboarding_done',
   resetTime: 'stepixels.reset_time',
   communityTotal: 'stepixels.community_total',
+  stepsAccessAsked: 'stepixels.steps_access_asked',
 }
 
 /**
@@ -45,5 +46,17 @@ export const preferencesRepository = {
     if (!Number.isFinite(total)) throw new RangeError(`Community total: ${total}, expected a finite number`)
 
     await AsyncStorage.setItem(KEYS.communityTotal, String(total))
+  },
+
+  /**
+   * Whether the app already asked for the steps access. Only Android needs it: Health Connect
+   * does not tell whether it was asked before (see `src/lib/steps.android.ts`).
+   */
+  async getStepsAccessAsked(): Promise<boolean> {
+    return (await AsyncStorage.getItem(KEYS.stepsAccessAsked)) === 'true'
+  },
+
+  async setStepsAccessAsked(asked: boolean) {
+    await AsyncStorage.setItem(KEYS.stepsAccessAsked, String(asked))
   },
 }

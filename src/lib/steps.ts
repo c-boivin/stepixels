@@ -8,7 +8,9 @@
  * - `undetermined`: never asked yet, explain the benefit then call `requestStepsAccess()`;
  * - `granted`: the steps can be read;
  * - `refused`: just declined, the system can still ask again;
- * - `blocked`: only the settings can allow it.
+ * - `blocked`: only the settings can allow it. Also returned in the very rare case where the
+ *   phone has no step source (Health Connect missing or outdated, no motion sensor): it is built
+ *   into Android 14+, our minimum, and every recent iPhone has the sensor, so no separate state.
  */
 export type StepsAccess = 'undetermined' | 'granted' | 'refused' | 'blocked'
 
@@ -27,5 +29,5 @@ export async function requestStepsAccess(): Promise<StepsAccess> {
  * walked while the app was closed. Throws when the steps cannot be read (no access).
  */
 export async function getStepsSince(start: Date): Promise<number> {
-  return 0
+  throw new Error('No step source on this platform')
 }

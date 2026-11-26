@@ -19,8 +19,15 @@ function permission(response: Partial<PermissionResponse>): PermissionResponse {
 
 describe('steps on iOS', () => {
   beforeEach(() => {
-    // restoreMocks resets the answers, not the call history
-    jest.clearAllMocks()
+    // each test starts with no answer and no call from the pedometer
+    for (const mock of [
+      Pedometer.isAvailableAsync,
+      Pedometer.getPermissionsAsync,
+      Pedometer.requestPermissionsAsync,
+      Pedometer.getStepCountAsync,
+    ]) {
+      jest.mocked(mock).mockReset()
+    }
     jest.mocked(Pedometer.isAvailableAsync).mockResolvedValue(true)
   })
 

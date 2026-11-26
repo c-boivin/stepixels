@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   aggregateRecord,
   getGrantedPermissions,
@@ -12,10 +13,15 @@ import { getStepsAccess, getStepsSince, requestStepsAccess } from '~/lib/steps.a
 const READ_STEPS = { accessType: 'read', recordType: 'Steps' } as const
 
 describe('steps on Android', () => {
-  // by default Health Connect is installed and up to date
-  beforeEach(() => {
-    // restoreMocks resets the answers, not the call history
-    jest.clearAllMocks()
+  beforeEach(async () => {
+    // each test starts with no answer and no call from Health Connect, and an empty storage
+    // (not resetAllMocks: it would also erase the AsyncStorage mock that the test needs)
+    for (const mock of [aggregateRecord, getGrantedPermissions, getSdkStatus, initialize, requestPermission]) {
+      jest.mocked(mock).mockReset()
+    }
+    await AsyncStorage.clear()
+
+    // by default Health Connect is installed and up to date
     jest.mocked(getSdkStatus).mockResolvedValue(SdkAvailabilityStatus.SDK_AVAILABLE)
     jest.mocked(initialize).mockResolvedValue(true)
   })
@@ -26,7 +32,7 @@ describe('steps on Android', () => {
     expect(await getStepsAccess()).toBe('granted')
   })
 
-  it('reads the access as undetermined when another permission is granted', async () => {
+  it('reads the access as undetermined when it was never asked', async () => {
     jest.mocked(getGrantedPermissions).mockResolvedValue([{ accessType: 'write', recordType: 'Steps' }])
 
     expect(await getStepsAccess()).toBe('undetermined')
@@ -55,6 +61,16 @@ describe('steps on Android', () => {
     jest.mocked(requestPermission).mockResolvedValue([])
 
     expect(await requestStepsAccess()).toBe('blocked')
+  })
+
+  it('remembers a refusal: blocked on the next launch, without asking again', async () => {
+    jest.mocked(getGrantedPermissions).mockResolvedValue([])
+    jest.mocked(requestPermission).mockResolvedValue([])
+    await requestStepsAccess()
+
+    expect(await getStepsAccess()).toBe('blocked')
+    expect(await requestStepsAccess()).toBe('blocked')
+    expect(requestPermission).toHaveBeenCalledTimes(1)
   })
 
   it('does not ask again when the permission is already granted', async () => {

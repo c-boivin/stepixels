@@ -36,7 +36,7 @@ export default function HomePage() {
 
   return (
     <View style={[STYLES.screen, { backgroundColor: colors.background }]}>
-      <Text style={[TYPO.number80, { color: colors.text }]}>{steps ?? '–'}</Text>
+      {steps !== null && <Text style={[TYPO.number80, { color: colors.text }]}>{steps}</Text>}
     </View>
   )
 }

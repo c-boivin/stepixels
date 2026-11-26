@@ -12,16 +12,19 @@ describe('preferencesRepository', () => {
     expect(await preferencesRepository.getOnboardingDone()).toBe(false)
     expect(await preferencesRepository.getResetTime()).toBe(DEFAULT_RESET_TIME)
     expect(await preferencesRepository.getCommunityTotal()).toBeNull()
+    expect(await preferencesRepository.getStepsAccessAsked()).toBe(false)
   })
 
   it('reads back what was saved', async () => {
     await preferencesRepository.setOnboardingDone(true)
     await preferencesRepository.setResetTime('07:30')
     await preferencesRepository.setCommunityTotal(1_250_000)
+    await preferencesRepository.setStepsAccessAsked(true)
 
     expect(await preferencesRepository.getOnboardingDone()).toBe(true)
     expect(await preferencesRepository.getResetTime()).toBe('07:30')
     expect(await preferencesRepository.getCommunityTotal()).toBe(1_250_000)
+    expect(await preferencesRepository.getStepsAccessAsked()).toBe(true)
   })
 
   it('returns no community total when the stored value is not a number', async () => {

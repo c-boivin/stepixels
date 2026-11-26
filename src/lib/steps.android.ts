@@ -7,8 +7,10 @@ import {
   SdkAvailabilityStatus,
 } from 'react-native-health-connect'
 
+import { preferencesRepository } from '~/repositories/preferences.repository'
+
 // type-only import: removed at build time, so Metro never loads `steps.ts` on Android
-import type { StepsAccess } from './steps'
+import type { StepsAccess } from '~/lib/steps'
 
 // Android: Health Connect (ADR-005). Needs a development build, not Expo Go.
 // This is the only file that imports react-native-health-connect.
@@ -18,18 +20,22 @@ const READ_STEPS = { accessType: 'read', recordType: 'Steps' } as const
 
 export async function getStepsAccess(): Promise<StepsAccess> {
   if (!(await connect())) return 'blocked'
+  if (hasReadSteps(await getGrantedPermissions())) return 'granted'
 
-  // Health Connect does not tell whether it was asked before
-  return hasReadSteps(await getGrantedPermissions()) ? 'granted' : 'undetermined'
+  // Health Connect does not tell whether it was asked before, so we remember it ourselves
+  return (await preferencesRepository.getStepsAccessAsked()) ? 'blocked' : 'undetermined'
 }
 
 export async function requestStepsAccess(): Promise<StepsAccess> {
   const access = await getStepsAccess()
   if (access !== 'undetermined') return access
 
+  const permissions = await requestPermission([READ_STEPS])
+  await preferencesRepository.setStepsAccessAsked(true)
+
   // Health Connect has no "can ask again": after two refusals it stops showing its dialog
   // without telling us. So a refusal is `blocked`: the Health Connect settings always work.
-  return hasReadSteps(await requestPermission([READ_STEPS])) ? 'granted' : 'blocked'
+  return hasReadSteps(permissions) ? 'granted' : 'blocked'
 }
 
 export async function getStepsSince(start: Date): Promise<number> {

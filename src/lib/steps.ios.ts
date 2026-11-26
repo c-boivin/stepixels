@@ -1,7 +1,7 @@
 import { Pedometer } from 'expo-sensors'
 
 // type-only import: removed at build time, so Metro never loads `steps.ts` on iOS
-import type { StepsAccess } from './steps'
+import type { StepsAccess } from '~/lib/steps'
 
 // iOS: CoreMotion through the Expo pedometer (ADR-005). Works in Expo Go.
 // See `steps.ts` for the documentation of each function.
