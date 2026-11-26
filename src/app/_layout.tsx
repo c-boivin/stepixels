@@ -10,11 +10,13 @@ import { useEffect, useState } from 'react'
 import { Launch, LAUNCH_MINIMUM_MS } from '~/components/views/Launch'
 import { Message } from '~/components/views/Message'
 
+import { useAppActive } from '~/hooks/useAppActive'
 import { useReduceMotion } from '~/hooks/useReduceMotion'
 
 import migrations from '~/db/migrations/migrations'
 import { db } from '~/lib/db'
 import { i18n } from '~/lib/i18n'
+import { backupRepository } from '~/repositories/backup.repository'
 
 import type { ErrorBoundaryProps } from 'expo-router'
 
@@ -38,6 +40,15 @@ export default function RootLayout() {
   const reduceMotion = useReduceMotion()
   const [loopShown, setLoopShown] = useState(false)
 
+  // the offline queue is sent once the local database is ready, then each time the app comes back:
+  // the network may be back (ADR-004). A failed send keeps the queue for the next time
+  useEffect(() => {
+    if (migrated) sendPendingValidations()
+  }, [migrated])
+  useAppActive(() => {
+    if (migrated) sendPendingValidations()
+  })
+
   useEffect(() => {
     if (!fontsReady) return
 
@@ -54,6 +65,11 @@ export default function RootLayout() {
   if (!migrated || (!loopShown && !reduceMotion)) return <Launch />
 
   return <Stack screenOptions={{ headerShown: false }} />
+}
+
+/** Sends the validations not sent yet; offline, they simply wait for the next try. */
+function sendPendingValidations() {
+  backupRepository.sendPending().catch(() => {})
 }
 
 /** Shown when the root layout fails, for example when a local database migration fails. */

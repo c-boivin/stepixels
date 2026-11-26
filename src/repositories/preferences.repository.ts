@@ -13,6 +13,7 @@ const KEYS = {
   communityTotal: 'stepixels.community_total',
   stepsAccessAsked: 'stepixels.steps_access_asked',
   accountEmail: 'stepixels.account_email',
+  restorePendingSince: 'stepixels.restore_pending_since',
 }
 
 /**
@@ -98,6 +99,23 @@ export const preferencesRepository = {
   async setAccountEmail(email: string | null) {
     if (email === null) await AsyncStorage.removeItem(KEYS.accountEmail)
     else await AsyncStorage.setItem(KEYS.accountEmail, email)
+  },
+
+  /**
+   * When the sign-in whose account progress has not come back yet started (#36): nothing is sent
+   * until it does. `null` when no restore is due, or if the stored value is unreadable.
+   */
+  async getRestorePendingSince(): Promise<Date | null> {
+    const value = await AsyncStorage.getItem(KEYS.restorePendingSince)
+    const date = value === null ? null : new Date(value)
+
+    return date !== null && Number.isFinite(date.getTime()) ? date : null
+  },
+
+  /** `null` once the restore is done, or when the sign-in failed. */
+  async setRestorePendingSince(at: Date | null) {
+    if (at === null) await AsyncStorage.removeItem(KEYS.restorePendingSince)
+    else await AsyncStorage.setItem(KEYS.restorePendingSince, at.toISOString())
   },
 
   async setStepsAccessAsked(asked: boolean) {

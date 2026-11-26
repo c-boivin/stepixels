@@ -83,4 +83,27 @@ describe('validationsRepository', () => {
 
     expect(validationsRepository.getLastValidatedAt()).toEqual(new Date('2026-11-25T18:00:00.000Z'))
   })
+
+  it('keeps the unsynced validations in the queue until they are marked as sent', () => {
+    const [first] = validationsRepository.add([{ imageNumber: 1, pixels: 2 }], new Date('2026-11-24T18:00:00.000Z'))
+    const [second] = validationsRepository.add([{ imageNumber: 1, pixels: 3 }], new Date('2026-11-25T18:00:00.000Z'))
+
+    expect(validationsRepository.getUnsynced().map(({ id }) => id)).toEqual([first.id, second.id])
+
+    validationsRepository.markSynced([first.id])
+    expect(validationsRepository.getUnsynced().map(({ id }) => id)).toEqual([second.id])
+  })
+
+  it('replaces every validation with the restored ones, keeping their sent state', () => {
+    validationsRepository.add([{ imageNumber: 1, pixels: 5 }])
+
+    validationsRepository.replaceAll([
+      { id: 'from-account', imageNumber: 2, pixels: 4, steps: 400, validatedAt: '2026-11-20T18:00:00.000Z', synced: true },
+    ])
+
+    expect(validationsRepository.getAll()).toEqual([
+      { id: 'from-account', imageNumber: 2, pixels: 4, steps: 400, validatedAt: '2026-11-20T18:00:00.000Z', synced: true },
+    ])
+    expect(validationsRepository.getUnsynced()).toEqual([])
+  })
 })

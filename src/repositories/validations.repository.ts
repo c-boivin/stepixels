@@ -1,4 +1,4 @@
-import { asc, desc, sql } from 'drizzle-orm'
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { randomUUID } from 'expo-crypto'
 
 import { validations } from '~/db/schema'
@@ -68,5 +68,32 @@ export const validationsRepository = {
     })
 
     return rows
+  },
+
+  /** The offline queue: the validations not sent to Supabase yet, oldest first. */
+  getUnsynced(): Validation[] {
+    return db
+      .select()
+      .from(validations)
+      .where(eq(validations.synced, false))
+      .orderBy(asc(validations.validatedAt), asc(sql`rowid`))
+      .all()
+  },
+
+  /** Marks these validations as sent: they leave the offline queue. */
+  markSynced(ids: string[]) {
+    if (ids.length === 0) return
+    db.update(validations).set({ synced: true }).where(inArray(validations.id, ids)).run()
+  },
+
+  /**
+   * Replaces every validation of the phone with these ones (restored after a sign-in: the
+   * account's progress wins), all at once or not at all. Each row keeps its `synced` state.
+   */
+  replaceAll(rows: Validation[]) {
+    db.transaction((tx) => {
+      tx.delete(validations).run()
+      for (const row of rows) tx.insert(validations).values(row).run()
+    })
   },
 }

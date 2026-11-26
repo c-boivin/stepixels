@@ -4,6 +4,7 @@ import { Keyboard } from 'react-native'
 import { SignUp } from '~/components/views/SignUp'
 
 import { authRepository, toAccountError } from '~/repositories/auth.repository'
+import { backupRepository } from '~/repositories/backup.repository'
 
 import type { SignUpError, SignUpForm } from '~/components/views/SignUp'
 
@@ -25,6 +26,8 @@ export default function SignUpPage() {
       // a wrong password cannot happen on a sign-up: anything unexpected is "unknown"
       return kind === 'email_taken' || kind === 'offline' ? kind : 'unknown'
     }
+    // the guest's progress goes to the new account; offline, it waits for the next send (ADR-004)
+    backupRepository.sendPending().catch(() => {})
     // outside the try: the account exists, a navigation problem is not a sign-up error
     onBack()
     return null
