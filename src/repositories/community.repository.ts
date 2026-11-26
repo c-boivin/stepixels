@@ -23,11 +23,11 @@ export const communityRepository = {
 
     try {
       const { data, error } = await supabase.rpc('community_total').abortSignal(controller.signal)
-      const total = Number(data)
 
-      if (error === null && Number.isFinite(total)) {
-        await preferencesRepository.setCommunityTotal(total)
-        return total
+      // anything but a number (null, text…) must neither be shown nor replace the kept total
+      if (error === null && typeof data === 'number' && Number.isFinite(data)) {
+        await preferencesRepository.setCommunityTotal(data)
+        return data
       }
     } finally {
       clearTimeout(timeout)

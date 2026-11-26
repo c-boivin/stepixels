@@ -66,4 +66,12 @@ describe('communityRepository', () => {
 
     expect(await communityRepository.getTotal(signal)).toBe(42)
   })
+
+  it('ignores an empty answer instead of showing 0', async () => {
+    await preferencesRepository.setCommunityTotal(42)
+    answer({ data: null, error: null })
+
+    expect(await communityRepository.getTotal(signal)).toBe(42)
+    expect(await preferencesRepository.getCommunityTotal()).toBe(42)
+  })
 })

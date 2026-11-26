@@ -48,6 +48,9 @@ const STYLES = StyleSheet.create({
   },
   line: {
     flexDirection: 'row',
+    // large system font or long total: the sentence goes on two lines instead of overflowing
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
   },
