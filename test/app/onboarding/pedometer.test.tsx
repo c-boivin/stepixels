@@ -21,6 +21,8 @@ const ROUTES = {
 
 /** The "connected" screen stays 1.5 s: wait a bit longer for the home screen. */
 const CONNECTED_TIMEOUT = { timeout: 3000 }
+// the home screen: its first image, nothing validated yet
+const HOME_LABEL = '01 - LE CHAMPIGNON, aucun pixel révélé sur 256'
 
 async function openScreen() {
   await renderRouter(ROUTES, { initialUrl: '/onboarding/pedometer' })
@@ -54,7 +56,7 @@ describe('onboarding pedometer route', () => {
 
     expect(await screen.findByRole('header', { name: 'PODOMÈTRE\nCONNECTÉ' })).toBeTruthy()
 
-    expect(await screen.findByTestId('home', {}, CONNECTED_TIMEOUT)).toBeTruthy()
+    expect(await screen.findByLabelText(HOME_LABEL, {}, CONNECTED_TIMEOUT)).toBeTruthy()
     expect(screen).toHavePathname('/')
     expect(await preferencesRepository.getOnboardingDone()).toBe(true)
   })
@@ -101,7 +103,7 @@ describe('onboarding pedometer route', () => {
     await act(async () => listeners.at(-1)?.('active'))
 
     expect(await screen.findByRole('header', { name: 'PODOMÈTRE\nCONNECTÉ' })).toBeTruthy()
-    expect(await screen.findByTestId('home', {}, CONNECTED_TIMEOUT)).toBeTruthy()
+    expect(await screen.findByLabelText(HOME_LABEL, {}, CONNECTED_TIMEOUT)).toBeTruthy()
   })
 
   it('shows "connected" at once when the access is already granted', async () => {

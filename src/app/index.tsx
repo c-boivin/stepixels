@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router'
 import { Suspense, use } from 'react'
-import { View } from 'react-native'
 
+import { Home } from '~/components/views/Home'
 import { Launch } from '~/components/views/Launch'
 import { Message } from '~/components/views/Message'
 
@@ -11,10 +11,13 @@ import { getHomePage } from '~/data/get-home-page'
 import { i18n } from '~/lib/i18n'
 
 import type { ErrorBoundaryProps } from 'expo-router'
+import type { HomeCarouselItemParams } from '~/components/views/Home/HomeCarousel'
 
 export interface HomePageData {
   /** `false` on a first launch: the user starts with the onboarding. */
   onboardingDone: boolean
+  /** The images of the home carousel, from the validations saved on the phone. */
+  images: HomeCarouselItemParams[]
 }
 
 /**
@@ -32,12 +35,11 @@ export default function HomePage() {
 }
 
 function FirstScreen({ page }: { page: Promise<HomePageData> }) {
-  const { onboardingDone } = use(page)
+  const { onboardingDone, images } = use(page)
 
   if (!onboardingDone) return <Redirect href="/onboarding/welcome" />
 
-  // the home screen comes with #27
-  return <View testID="home" />
+  return <Home images={images} />
 }
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {

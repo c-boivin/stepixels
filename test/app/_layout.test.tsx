@@ -13,6 +13,8 @@ jest.mock('drizzle-orm/expo-sqlite/migrator', () => ({ useMigrations: jest.fn() 
 
 const ROUTES = { _layout: { default: RootLayout, ErrorBoundary }, index: HomePage }
 const LAUNCH_LABEL = 'Stepixels se prépare'
+// the home screen: its first image, nothing validated yet
+const HOME_LABEL = '01 - LE CHAMPIGNON, aucun pixel révélé sur 256'
 
 describe('root layout', () => {
   beforeEach(async () => {
@@ -45,7 +47,7 @@ describe('root layout', () => {
     expect(screen.getByLabelText(LAUNCH_LABEL)).toBeTruthy()
 
     await act(() => jest.advanceTimersByTimeAsync(20))
-    expect(await screen.findByTestId('home')).toBeTruthy()
+    expect(await screen.findByLabelText(HOME_LABEL)).toBeTruthy()
     expect(screen).toHavePathname('/')
     expect(screen.queryByRole('button', { name: 'RÉESSAYER' })).toBeNull()
   })
@@ -57,7 +59,7 @@ describe('root layout', () => {
     await renderRouter(ROUTES)
 
     // well before the end of a loop
-    expect(await screen.findByTestId('home', {}, { timeout: LAUNCH_MINIMUM_MS / 2 })).toBeTruthy()
+    expect(await screen.findByLabelText(HOME_LABEL, {}, { timeout: LAUNCH_MINIMUM_MS / 2 })).toBeTruthy()
   })
 
   it('shows an error screen with a retry button when a migration fails', async () => {
