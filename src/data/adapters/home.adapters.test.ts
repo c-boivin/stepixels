@@ -42,6 +42,12 @@ describe('homeDayAdapter', () => {
 })
 
 describe('homeRevealAdapter', () => {
+  it('counts the counter down from the steps of the day to 0', () => {
+    const reveal = homeRevealAdapter({ imageNumber: 1, steps: 4230, pixels: 42, revealedFrom: 0, revealedTo: 42, finished: null })
+
+    expect([0, 0.5, 1].map(reveal.counterAt)).toEqual(['4230', '2115', '0'])
+  })
+
   it.each([
     [1, '+1 PIXEL'],
     [42, '+42 PIXELS'],

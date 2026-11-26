@@ -1,4 +1,4 @@
-import { getImagesProgress, splitPixels } from '~/lib/progress'
+import { getImagesProgress, getUnlockedImageFromValidations, splitPixels } from '~/lib/progress'
 
 // three small images: 4, 4 and 9 cells
 const IMAGES = [
@@ -131,3 +131,32 @@ describe('splitPixels', () => {
     expect(splitPixels(IMAGES, [], 0)).toEqual([])
   })
 })
+
+describe('getUnlockedImageFromValidations', () => {
+  const at = (time: string) => new Date(`2026-11-26T${time}:00`)
+
+  it('unlocks only the first image without validation', () => {
+    expect(getUnlockedImageFromValidations(IMAGES, [])).toBe(1)
+  })
+
+  it('keeps the next image locked when its only pixels were carried by the validation that finished the image', () => {
+    const validations = [
+      { imageNumber: 1, pixels: 4, validatedAt: at('10:00') },
+      { imageNumber: 2, pixels: 2, validatedAt: at('10:00') },
+    ]
+
+    expect(getUnlockedImageFromValidations(IMAGES, validations)).toBe(1)
+  })
+
+  it('unlocks an image validated after the previous one was finished: SUIVANT was tapped', () => {
+    const validations = [
+      { imageNumber: 1, pixels: 3, validatedAt: at('09:00') },
+      { imageNumber: 1, pixels: 1, validatedAt: at('10:00') },
+      { imageNumber: 2, pixels: 4, validatedAt: at('11:00') },
+      { imageNumber: 3, pixels: 1, validatedAt: at('12:00') },
+    ]
+
+    expect(getUnlockedImageFromValidations(IMAGES, validations)).toBe(3)
+  })
+})
+

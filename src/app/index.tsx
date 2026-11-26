@@ -10,6 +10,7 @@ import { useRequest } from '~/hooks/useRequest'
 
 import { getHomePage } from '~/data/get-home-page'
 import { i18n } from '~/lib/i18n'
+import { backupRepository } from '~/repositories/backup.repository'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 import { validationsRepository } from '~/repositories/validations.repository'
 
@@ -54,21 +55,32 @@ export default function HomePage() {
 
   return (
     <Suspense fallback={<Launch />}>
-      <FirstScreen page={page} onChange={refreshOnce} />
+      <FirstScreen page={page} onChange={refreshOnce} onSaved={refresh} />
     </Suspense>
   )
 }
 
-function FirstScreen({ page, onChange }: { page: Promise<HomePageData>; onChange: () => void }) {
+interface FirstScreenProps {
+  page: Promise<HomePageData>
+  /** Reads the screen again, unless a read is already running. */
+  onChange: () => void
+  /** Reads the screen again after a save, even if a read is running: that one may predate the save. */
+  onSaved: () => void
+}
+
+function FirstScreen({ page, onChange, onSaved }: FirstScreenProps) {
   const { home } = use(page)
   const router = useRouter()
   // an error while saving goes to the ErrorBoundary below (wrapped: the reason itself can be empty)
   const [failure, setFailure] = useState<{ error: unknown } | null>(null)
+  // time of the last saved validation: data read before it would save the same steps again
+  const [savedAt, setSavedAt] = useState<number | null>(null)
 
   if (failure) throw failure.error
   if (home === null) return <Redirect href="/onboarding/welcome" />
 
-  const { validation } = home
+  // VALIDER stays disabled until the screen is read again after the save (double tap)
+  const validation = home.validation !== null && (savedAt === null || home.validation.readAt.getTime() > savedAt) ? home.validation : null
 
   // saved before the animation starts: closing the app during it keeps the pixels (#29)
   function onValidate(): boolean {
@@ -80,13 +92,16 @@ function FirstScreen({ page, onChange }: { page: Promise<HomePageData>; onChange
       setFailure({ error })
       return false
     }
+    setSavedAt(Date.now())
+    // sent at once when online (ADR-004); offline, it waits in the queue for the next send
+    backupRepository.sendPending().catch(() => {})
     // read again at once: the counter, the images and the message change under the animation
-    onChange()
+    onSaved()
     return true
   }
 
   function onUnlock(number: number) {
-    preferencesRepository.unlockImage(number).then(onChange, (error: unknown) => setFailure({ error }))
+    preferencesRepository.unlockImage(number).then(onSaved, (error: unknown) => setFailure({ error }))
   }
 
   // a new day starts at the reset time: the steps are read again from it (#30)

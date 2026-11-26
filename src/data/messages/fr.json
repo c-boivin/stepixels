@@ -84,6 +84,7 @@
       "value": "%{steps} PAS",
       "validating": "VALIDATION…",
       "pixels": {
+        "zero": "+0 PIXEL",
         "one": "+1 PIXEL",
         "other": "+%{pixels} PIXELS"
       }
@@ -114,11 +115,13 @@
       "title": "IMAGE TERMINÉE",
       "summary": "%{steps} pas · %{days} · %{distance}",
       "days": {
+        "zero": "0 jour",
         "one": "1 jour",
         "other": "%{count} jours"
       },
       "button": "SUIVANT",
-      "button_value": "→"
+      "button_value": "→",
+      "close": "FERMER"
     },
     "distance": "%{km} km"
   },

@@ -9,6 +9,7 @@ import { validations } from '~/db/schema'
 import { db } from '~/lib/db'
 import { getStepsBetween } from '~/lib/steps'
 import { preferencesRepository } from '~/repositories/preferences.repository'
+import { backupRepository } from '~/repositories/backup.repository'
 import { validationsRepository } from '~/repositories/validations.repository'
 
 import type { AppStateStatus } from 'react-native'
@@ -16,6 +17,11 @@ import type { AppStateStatus } from 'react-native'
 // the onboarding screen loads the community total: here, only the route choice matters
 jest.mock('~/repositories/community.repository', () => ({
   communityRepository: { getTotal: jest.fn().mockResolvedValue(null) },
+}))
+
+// a validation is sent at once (ADR-004): here, only that it is asked
+jest.mock('~/repositories/backup.repository', () => ({
+  backupRepository: { sendPending: jest.fn().mockResolvedValue(undefined) },
 }))
 
 // what the phone answers for each period of time: each test sets it
@@ -264,6 +270,7 @@ describe('first route', () => {
 
         // saved before the animation: closing the app now keeps the pixels; the 30 steps left are lost
         expect(validationsRepository.getAll()).toMatchObject([{ imageNumber: 1, pixels: 42, steps: 4200 }])
+        expect(backupRepository.sendPending).toHaveBeenCalled()
         expect(screen.getByRole('button', { name: 'VALIDATION…' })).toBeTruthy()
         expect(screen.getByText('+42 PIXELS')).toBeTruthy()
         expect(screen.getByText('ÇA SE RÉVÈLE')).toBeTruthy()
@@ -278,6 +285,36 @@ describe('first route', () => {
         expect(screen.getByLabelText('Compteur du jour : 0 pas à valider')).toBeTruthy()
         expect(screen.getByLabelText('01 - LE CHAMPIGNON, 42 pixels révélés sur 256')).toBeTruthy()
         expect(screen.getByRole('button', { name: 'VALIDER' })).toBeDisabled()
+      })
+
+      it('saves a validation once, even when VALIDER is tapped twice', async () => {
+        mockSteps({ today: 4230, yesterday: 0 })
+        await renderRouter(ROUTES)
+
+        jest.mocked(getStepsBetween).mockResolvedValue(0)
+        const button = await screen.findByRole('button', { name: 'VALIDER' })
+        await fireEvent.press(button)
+        await fireEvent.press(button)
+        await act(async () => {
+          jest.advanceTimersByTime(3000)
+        })
+        // a third tap, once the animation is over
+        await fireEvent.press(screen.getByRole('button', { name: 'VALIDER' }))
+
+        expect(validationsRepository.getAll()).toHaveLength(1)
+      })
+
+      it('shows the image of a restored account unlocked, without SUIVANT', async () => {
+        // restored from the account (#64): image 02 was validated after image 01 was finished
+        validationsRepository.add([{ imageNumber: 1, pixels: 256 }], new Date('2026-11-23T10:00:00'))
+        validationsRepository.add([{ imageNumber: 2, pixels: 10 }], new Date('2026-11-24T10:00:00'))
+        mockSteps({ today: 4230, yesterday: 0 })
+
+        await renderRouter(ROUTES)
+
+        expect(await screen.findByLabelText(`02 - L’ÉTOILE, 10 pixels révélés sur 1${SPACE}024`)).toBeTruthy()
+        expect(screen.queryByRole('button', { name: 'SUIVANT' })).toBeNull()
+        expect(screen.getByRole('button', { name: 'VALIDER' })).not.toBeDisabled()
       })
 
       it('celebrates a finished image once, then unlocks the next one with the extra pixels', async () => {

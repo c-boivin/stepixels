@@ -93,3 +93,45 @@ function sumPixelsByImage(validations: readonly ProgressValidation[]): Map<numbe
   }
   return pixelsByImage
 }
+
+/** A validation with its time: needed to know whether an image was unlocked. */
+export interface TimedValidation extends ProgressValidation {
+  validatedAt: Date
+}
+
+/**
+ * The last unlocked image, as the validations show it (#31): image N+1 is unlocked when it has a
+ * validation made after the one that finished image N, since validating it needed `SUIVANT`.
+ * Pixels carried over by the validation that finished image N have the same time: they do not
+ * unlock it. Brings the unlocked image back with the validations restored from an account (#64);
+ * only a `SUIVANT` with no validation since is not in the validations.
+ * @param validations oldest first.
+ */
+export function getUnlockedImageFromValidations(images: readonly ProgressImage[], validations: readonly TimedValidation[]): number {
+  let unlocked = images[0]?.number ?? 1
+
+  for (const [index, image] of images.entries()) {
+    const next = images[index + 1]
+    const finishedAt = getFinishedAt(image, validations)
+    if (next === undefined || finishedAt === null) break
+
+    const validatedAfter = validations.some(
+      ({ imageNumber, validatedAt }) => imageNumber === next.number && validatedAt > finishedAt,
+    )
+    if (!validatedAfter) break
+    unlocked = next.number
+  }
+
+  return unlocked
+}
+
+/** Time of the validation that revealed the last cell of `image`; `null` while it is not finished. */
+function getFinishedAt(image: ProgressImage, validations: readonly TimedValidation[]): Date | null {
+  let revealed = 0
+  for (const { imageNumber, pixels, validatedAt } of validations) {
+    if (imageNumber !== image.number) continue
+    revealed += pixels
+    if (revealed >= image.cells.length) return validatedAt
+  }
+  return null
+}

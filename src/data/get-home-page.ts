@@ -2,7 +2,7 @@ import { homeDayAdapter, homeRevealAdapter } from '~/data/adapters/home.adapters
 import { imageCardAdapter, imageFinishedAdapter } from '~/data/adapters/images.adapters'
 import { CATALOGUE } from '~/data/images/catalogue'
 import { countDays, getDayStart, getDayWindows, isWorthShowingLoss } from '~/lib/day'
-import { getImagesProgress, splitPixels } from '~/lib/progress'
+import { getImagesProgress, getUnlockedImageFromValidations, splitPixels } from '~/lib/progress'
 import { STEPS_PER_PIXEL } from '~/lib/rules'
 import { getStepsAccess, getStepsBetween } from '~/lib/steps'
 import { preferencesRepository } from '~/repositories/preferences.repository'
@@ -45,11 +45,19 @@ export async function getHomePage(): Promise<HomePageData> {
 
   const steps = await readSteps(counter, lost)
 
-  const progress = getImagesProgress(CATALOGUE, allValidations, unlocked.number)
+  // saved by SUIVANT, or shown by the validations: those come back with an account's progress (#64)
+  const unlockedNumber = Math.max(
+    unlocked.number,
+    getUnlockedImageFromValidations(
+      CATALOGUE,
+      allValidations.map((row) => ({ ...row, validatedAt: new Date(row.validatedAt) })),
+    ),
+  )
+  const progress = getImagesProgress(CATALOGUE, allValidations, unlockedNumber)
   const revealing = progress.find(({ state }) => state === 'current' || state === 'new') ?? null
   // the finished image waits for `SUIVANT` (#31) when an image after it can be unlocked
-  const waiting = revealing === null ? (progress.find(({ image }) => image.number === unlocked.number) ?? null) : null
-  const unlock = waiting !== null && waiting.state === 'finished' && unlocked.number < CATALOGUE.length ? unlocked.number + 1 : null
+  const waiting = revealing === null ? (progress.find(({ image }) => image.number === unlockedNumber) ?? null) : null
+  const unlock = waiting !== null && waiting.state === 'finished' && unlockedNumber < CATALOGUE.length ? unlockedNumber + 1 : null
   // validating would give 0 pixel under 100 steps (OQ-11)
   const pixels = steps.toValidate === null ? 0 : Math.floor(steps.toValidate / STEPS_PER_PIXEL)
 
@@ -61,7 +69,11 @@ export async function getHomePage(): Promise<HomePageData> {
   } else if (steps.toValidate !== null && pixels === 0) {
     // these messages stay until there is something to validate again
     const lastAt = lastValidation?.validatedAt ?? null
-    if (unlocked.unlockedAt !== null && (lastAt === null || unlocked.unlockedAt > lastAt)) {
+    if (
+      unlocked.number === unlockedNumber &&
+      unlocked.unlockedAt !== null &&
+      (lastAt === null || unlocked.unlockedAt > lastAt)
+    ) {
       message = { kind: 'new_image', number: unlocked.number }
     } else if (lastValidation !== null && lastValidation.validatedAt >= getDayStart(resetTime, now)) {
       message = { kind: 'validated', steps: lastValidation.steps }

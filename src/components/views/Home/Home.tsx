@@ -55,8 +55,8 @@ export interface HomeDayParams {
 export interface HomeRevealParams {
   /** The image being revealed, where the animation runs. */
   imageNumber: number
-  /** Steps of the counter, counted down to 0. */
-  steps: number
+  /** The counter at `progress` (0 to 1) of the animation: from the steps of the day down to `0`. */
+  counterAt: (progress: number) => string
   /** `+42 PIXELS`, on the button while the pixels appear. */
   pixels: string
   /** Revealed cells of the image before the validation, and after. */
@@ -125,7 +125,7 @@ export function Home({
   const index = browsed ?? currentIndex
   const items = revealing === null ? images : images.map((item) => revealedItem(item, revealing.reveal, progress))
   const inFront = items[index]
-  const shownCounter = revealing === null ? counter : String(Math.round(revealing.reveal.steps * (1 - progress)))
+  const shownCounter = revealing === null ? counter : revealing.reveal.counterAt(progress)
   const shownMessage: HomeMessageParams | null =
     revealing === null
       ? message
@@ -169,7 +169,7 @@ export function Home({
 
         <View style={STYLES.message}>
           {/* the "Le saviez-vous ?" fact (#32) takes this place when there is no loss to show */}
-          {stepsAccess !== 'granted' && (
+          {stepsAccess !== 'granted' && unlock === null && (
             <View accessible style={STYLES.messageContent}>
               <Text style={[TYPO.overline12, { color: colors.accentText }]}>
                 {i18n.t('home.steps_access.title')}
@@ -179,7 +179,7 @@ export function Home({
               </Text>
             </View>
           )}
-          {stepsAccess === 'granted' && shownMessage !== null && (
+          {(stepsAccess === 'granted' || unlock !== null) && shownMessage !== null && (
             <View accessible style={STYLES.messageContent}>
               <Text style={[TYPO.overline12, { color: colors.accentText }]}>{shownMessage.title}</Text>
               <Text style={[TYPO.fact17, STYLES.centered, { color: colors.text }]}>{shownMessage.description}</Text>
@@ -217,6 +217,12 @@ export function Home({
               value={i18n.t('home.carousel.back_value')}
               onPress={() => setBrowsed(null)}
             />
+          ) : revealing !== null ? (
+            // outlined while the pixels appear: pressing it does nothing
+            <Button variant="secondary" label={i18n.t('home.validate.validating')} value={revealing.reveal.pixels} />
+          ) : unlock !== null ? (
+            // unlocking needs no steps: shown even without the steps access
+            <Button label={i18n.t('home.unlock.button')} value={i18n.t('home.unlock.value')} onPress={() => onUnlock(unlock)} />
           ) : stepsAccess === 'blocked' ? (
             // only the settings can allow it (docs/conventions.md): coming back reads the steps again
             <Button
@@ -236,11 +242,6 @@ export function Home({
                 requestStepsAccess().then(onStepsAccessChange, onStepsAccessChange)
               }}
             />
-          ) : revealing !== null ? (
-            // outlined while the pixels appear: pressing it does nothing
-            <Button variant="secondary" label={i18n.t('home.validate.validating')} value={revealing.reveal.pixels} />
-          ) : unlock !== null ? (
-            <Button label={i18n.t('home.unlock.button')} value={i18n.t('home.unlock.value')} onPress={() => onUnlock(unlock)} />
           ) : (
             // disabled under 100 steps: validating would give 0 pixel (OQ-11)
             <Button

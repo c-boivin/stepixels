@@ -35,8 +35,7 @@ export interface HomeDayRaw {
 export function homeDayAdapter({ stepsAccess, stepsToValidate, message, nextReset }: HomeDayRaw): HomeDayParams {
   return {
     stepsAccess,
-    // the big counter has no thousands separator, as in the design (`4230`)
-    counter: stepsToValidate === null ? null : String(stepsToValidate),
+    counter: stepsToValidate === null ? null : formatCounter(stepsToValidate),
     message: message === null ? null : homeMessageAdapter(message),
     validateValue: i18n.t('home.validate.value', { steps: COUNT_FORMAT.format(stepsToValidate ?? 0) }),
     nextReset,
@@ -86,8 +85,17 @@ export interface HomeRevealRaw {
 }
 
 /** What `VALIDER` shows while it reveals the pixels (#29). */
-export function homeRevealAdapter({ pixels, ...reveal }: HomeRevealRaw): HomeRevealParams {
-  return { ...reveal, pixels: i18n.t('home.validate.pixels', { count: pixels, pixels: COUNT_FORMAT.format(pixels) }) }
+export function homeRevealAdapter({ pixels, steps, ...reveal }: HomeRevealRaw): HomeRevealParams {
+  return {
+    ...reveal,
+    counterAt: (progress) => formatCounter(Math.round(steps * (1 - progress))),
+    pixels: i18n.t('home.validate.pixels', { count: pixels, pixels: COUNT_FORMAT.format(pixels) }),
+  }
+}
+
+/** The big counter has no thousands separator, as in the design (`4230`). */
+function formatCounter(steps: number): string {
+  return String(steps)
 }
 
 /** A distance walked, from steps (R6): `3,2 km`, `19 km`. */

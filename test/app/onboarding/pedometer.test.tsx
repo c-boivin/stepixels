@@ -8,6 +8,9 @@ import { getStepsAccess, openStepsSettings, requestStepsAccess } from '~/lib/ste
 import { preferencesRepository } from '~/repositories/preferences.repository'
 
 // the permission answers come from the phone: each test sets them
+// the home screen sends a validation at once: no Supabase in these tests
+jest.mock('~/lib/supabase', () => ({ supabase: {} }))
+
 jest.mock('~/lib/steps', () => ({
   getStepsAccess: jest.fn(),
   requestStepsAccess: jest.fn(),

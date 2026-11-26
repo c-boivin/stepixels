@@ -25,7 +25,7 @@ export interface HomeFinishedModalParams extends PixelGridParams {
 export interface HomeFinishedModalProps {
   /** The image to celebrate; `null` hides the modal. */
   image: HomeFinishedModalParams | null
-  /** `SUIVANT`: unlocks the next image (#31). */
+  /** `SUIVANT`: unlocks the next image (#31). The last image has `FERMER` instead, which calls `onClose`. */
   onNext: () => void
   /** Back button of Android, escape gesture of the screen reader: the home screen keeps a `SUIVANT` button. */
   onClose: () => void
@@ -62,11 +62,16 @@ export function HomeFinishedModal({ image, onNext, onClose }: HomeFinishedModalP
               </Text>
               <Text style={[TYPO.body15, STYLES.centered, { color: colors.muted }]}>{image.summary}</Text>
             </View>
-            <Button
-              label={i18n.t('home.finished_modal.button')}
-              value={i18n.t('home.finished_modal.button_value')}
-              onPress={onNext}
-            />
+            {image.next !== null ? (
+              <Button
+                label={i18n.t('home.finished_modal.button')}
+                value={i18n.t('home.finished_modal.button_value')}
+                onPress={onNext}
+              />
+            ) : (
+              // the last image of the catalogue: no next image to promise (out of V1, OQ-13)
+              <Button label={i18n.t('home.finished_modal.close')} onPress={onClose} />
+            )}
           </View>
         )}
       </View>
