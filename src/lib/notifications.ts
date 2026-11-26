@@ -1,5 +1,6 @@
 import {
   AndroidImportance,
+  addNotificationResponseReceivedListener,
   cancelAllScheduledNotificationsAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
@@ -49,6 +50,17 @@ export function setUpNotifications() {
   })
 }
 
+/**
+ * Calls `onOpen` each time the user taps a notification of the app. Returns the function that
+ * stops listening.
+ */
+export function listenToNotificationTaps(onOpen: () => void): () => void {
+  if (Platform.OS === 'web') return () => {}
+
+  const subscription = addNotificationResponseReceivedListener(onOpen)
+  return () => subscription.remove()
+}
+
 /** Reads the current access, without asking the user. */
 export async function getNotificationsAccess(): Promise<NotificationsAccess> {
   if (Platform.OS === 'web') return 'blocked'
@@ -63,12 +75,7 @@ export async function requestNotificationsAccess(channelName: string): Promise<N
   if (Platform.OS === 'web') return 'blocked'
 
   // Android 13+ shows the permission prompt only once a channel exists
-  if (Platform.OS === 'android') {
-    await setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
-      name: channelName,
-      importance: AndroidImportance.HIGH,
-    })
-  }
+  await createReminderChannel(channelName)
 
   const permission = await getPermissionsAsync()
   if (permission.granted) return 'granted'
@@ -82,9 +89,11 @@ export async function requestNotificationsAccess(channelName: string): Promise<N
  * Replaces every planned notification of the app by one `text` at each of `dates`.
  * On Android, a notification can arrive a few minutes late: the system groups alarms to save battery.
  */
-export async function scheduleNotifications(dates: readonly Date[], text: NotificationText) {
+export async function scheduleNotifications(dates: readonly Date[], text: NotificationText, channelName: string) {
   if (Platform.OS === 'web') return
 
+  // created again each time: the permission may have been given later, from the system settings
+  await createReminderChannel(channelName)
   await cancelAllScheduledNotificationsAsync()
   for (const date of dates) {
     await scheduleNotificationAsync({
@@ -92,4 +101,11 @@ export async function scheduleNotifications(dates: readonly Date[], text: Notifi
       trigger: { type: SchedulableTriggerInputTypes.DATE, date, channelId: REMINDER_CHANNEL_ID },
     })
   }
+}
+
+/** Creates the Android channel of the reminder, or updates its name; nothing on iOS. */
+async function createReminderChannel(name: string) {
+  if (Platform.OS !== 'android') return
+
+  await setNotificationChannelAsync(REMINDER_CHANNEL_ID, { name, importance: AndroidImportance.HIGH })
 }

@@ -182,3 +182,22 @@ Native modules do not run in Jest, which runs on the computer (Node): `test/setu
 **Limits.**
 
 - On a phone with no step source, the user stays on the onboarding 4/4: the settings button does not help, and the app cannot be used.
+
+## Reminder: 7 local notifications planned ahead, not a daily repeat
+
+**Rule.** The validation reminder (#55) is a **local notification** (`expo-notifications`), one hour before the reset time. The app plans **one notification per day for the next 7 days** (`REMINDER_DAYS`, `src/lib/rules.ts`), and plans them again each time the home screen is read (app opened or back, validation, new day): today's reminder is left out once the day's steps are validated. Nothing is planned unless the user said `OUI` to the question asked after the first validation **and** the system permission is granted.
+
+**Why.** The issue asks to skip the reminder on a day where the steps are validated, and to keep the next ones. A repeating notification is one notification for the system: it cannot be skipped for one day, only cancelled for every day. Separate dates planned again from the app's state give the right reminder every day, and a new reset time moves them without extra code. Local notifications need no server and work offline (R15) and in Expo Go on iOS.
+
+**Rejected.**
+
+- One daily repeating notification: simpler, but it would also come on a day already validated.
+- Only the next reminder: a user who does not open the app one day would get no reminder after it, yet this is the user the reminder should bring back.
+- Push notifications from a server: could check the steps at reminder time, but need a server, a push token, and do not work in Expo Go on Android.
+
+**Limits.**
+
+- A user who does not open the app for more than 7 days gets no reminder from day 8.
+- The notification is planned in advance: it cannot check the steps at reminder time. After a validation, today's reminder is removed even if the user walks again afterwards.
+- On Android, without the exact alarm permission, the system may deliver the reminder a few minutes late to save battery.
+- `PLUS TARD` or a refused permission is final in V1: no Settings row to turn the reminder on later.

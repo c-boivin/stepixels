@@ -3,7 +3,7 @@ import { DMMono_400Regular } from '@expo-google-fonts/dm-mono/400Regular'
 import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen/400Regular'
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator'
 import { useFonts } from 'expo-font'
-import { Stack } from 'expo-router'
+import { router, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect, useState } from 'react'
 
@@ -16,7 +16,7 @@ import { useReduceMotion } from '~/hooks/useReduceMotion'
 import migrations from '~/db/migrations/migrations'
 import { db } from '~/lib/db'
 import { i18n } from '~/lib/i18n'
-import { setUpNotifications } from '~/lib/notifications'
+import { listenToNotificationTaps, setUpNotifications } from '~/lib/notifications'
 import { backupRepository } from '~/repositories/backup.repository'
 
 import type { ErrorBoundaryProps } from 'expo-router'
@@ -42,6 +42,7 @@ export default function RootLayout() {
   // this layout mounts once per launch, so coming back from the background does not wait again
   const reduceMotion = useReduceMotion()
   const [loopShown, setLoopShown] = useState(false)
+  const stackShown = fontsReady && migrated && (loopShown || reduceMotion)
 
   // the offline queue is sent once the local database is ready, then each time the app comes back:
   // the network may be back (ADR-004). A failed send keeps the queue for the next time
@@ -60,12 +61,20 @@ export default function RootLayout() {
     return () => clearTimeout(timer)
   }, [fontsReady])
 
+  // a tap on the reminder (#55) opens the home screen, where the steps are validated: the app may
+  // have been left on another screen. Listened once the screens exist, so that there is a place to go;
+  // on a cold start, the app opens on the home screen anyway
+  useEffect(() => {
+    if (!stackShown) return
+    return listenToNotificationTaps(() => router.dismissTo('/'))
+  }, [stackShown])
+
   // without its database the app cannot work: the ErrorBoundary below tells the user
   if (migrationError) throw migrationError
   if (!fontsReady) return null
   // our launch screen (#22) while the local database is prepared, and for one loop at least
   // (no wait with "Reduce motion": the loader does not move, there is nothing to see)
-  if (!migrated || (!loopShown && !reduceMotion)) return <Launch />
+  if (!stackShown) return <Launch />
 
   return <Stack screenOptions={{ headerShown: false }} />
 }

@@ -16,13 +16,16 @@ const KEYS = {
   resetTime: 'stepixels.reset_time',
   communityTotal: 'stepixels.community_total',
   stepsAccessAsked: 'stepixels.steps_access_asked',
-  reminderAsked: 'stepixels.reminder_asked',
+  reminderAnswer: 'stepixels.reminder_answer',
   accountEmail: 'stepixels.account_email',
   restorePendingSince: 'stepixels.restore_pending_since',
   unlockedImage: 'stepixels.unlocked_image',
   unlockedAt: 'stepixels.unlocked_at',
   factChoice: 'stepixels.fact_choice',
 }
+
+/** The answer to the reminder question (#55). */
+export type ReminderAnswer = 'accepted' | 'declined'
 
 /** The last image the user can reveal (#31), and when it was unlocked. */
 export interface UnlockedImage {
@@ -162,13 +165,17 @@ export const preferencesRepository = {
     await AsyncStorage.setItem(KEYS.stepsAccessAsked, String(asked))
   },
 
-  /** Whether the user already answered the reminder question (#55): it is asked only once in V1. */
-  async getReminderAsked(): Promise<boolean> {
-    return (await AsyncStorage.getItem(KEYS.reminderAsked)) === 'true'
+  /**
+   * The answer to the reminder question (#55), asked only once in V1: `accepted` for `OUI`,
+   * `declined` for `PLUS TARD`; `null` before the question, or if the stored value is unreadable.
+   */
+  async getReminderAnswer(): Promise<ReminderAnswer | null> {
+    const value = await AsyncStorage.getItem(KEYS.reminderAnswer)
+    return value === 'accepted' || value === 'declined' ? value : null
   },
 
-  async setReminderAsked(asked: boolean) {
-    await AsyncStorage.setItem(KEYS.reminderAsked, String(asked))
+  async setReminderAnswer(answer: ReminderAnswer) {
+    await AsyncStorage.setItem(KEYS.reminderAnswer, answer)
   },
 
   /** The last unlocked image; the first one on a first launch, or if the stored value is unreadable. */
