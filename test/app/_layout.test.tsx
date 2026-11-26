@@ -6,6 +6,7 @@ import { AccessibilityInfo } from 'react-native'
 import RootLayout, { ErrorBoundary } from '~/app/_layout'
 import HomePage from '~/app/index'
 import { LAUNCH_MINIMUM_MS } from '~/components/views/Launch'
+import { backupRepository } from '~/repositories/backup.repository'
 import { preferencesRepository } from '~/repositories/preferences.repository'
 
 // the migrations run on the in-memory database elsewhere: here, only their result matters
@@ -13,6 +14,11 @@ jest.mock('drizzle-orm/expo-sqlite/migrator', () => ({ useMigrations: jest.fn() 
 
 // the home screen reads the steps of the day: here, only the screen that opens matters
 jest.mock('~/lib/steps', () => ({ getStepsBetween: jest.fn().mockResolvedValue(0) }))
+
+// the backup reaches Supabase: here, only when the layout asks for it matters
+jest.mock('~/repositories/backup.repository', () => ({
+  backupRepository: { sendPending: jest.fn().mockResolvedValue(undefined) },
+}))
 
 const ROUTES = { _layout: { default: RootLayout, ErrorBoundary }, index: HomePage }
 const LAUNCH_LABEL = 'Stepixels se prépare'
@@ -74,5 +80,13 @@ describe('root layout', () => {
 
     expect(screen.getByRole('header', { name: 'OUPS' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'RÉESSAYER' })).toBeTruthy()
+  })
+
+  it('sends the validations waiting for the network once the local database is ready', async () => {
+    jest.mocked(useMigrations).mockReturnValue({ success: true, error: undefined })
+
+    await renderRouter(ROUTES)
+
+    expect(backupRepository.sendPending).toHaveBeenCalled()
   })
 })

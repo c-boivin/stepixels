@@ -13,6 +13,7 @@ const KEYS = {
   communityTotal: 'stepixels.community_total',
   stepsAccessAsked: 'stepixels.steps_access_asked',
   accountEmail: 'stepixels.account_email',
+  restorePending: 'stepixels.restore_pending',
 }
 
 /**
@@ -98,6 +99,15 @@ export const preferencesRepository = {
   async setAccountEmail(email: string | null) {
     if (email === null) await AsyncStorage.removeItem(KEYS.accountEmail)
     else await AsyncStorage.setItem(KEYS.accountEmail, email)
+  },
+
+  /** A sign-in whose account progress has not come back yet (#36): nothing is sent until it does. */
+  async getRestorePending(): Promise<boolean> {
+    return (await AsyncStorage.getItem(KEYS.restorePending)) === 'true'
+  },
+
+  async setRestorePending(pending: boolean) {
+    await AsyncStorage.setItem(KEYS.restorePending, String(pending))
   },
 
   async setStepsAccessAsked(asked: boolean) {
