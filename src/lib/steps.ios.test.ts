@@ -1,6 +1,7 @@
 import { Pedometer } from 'expo-sensors'
+import { Linking } from 'react-native'
 
-import { getStepsAccess, getStepsSince, requestStepsAccess } from '~/lib/steps.ios'
+import { getStepsAccess, getStepsSince, openStepsSettings, requestStepsAccess } from '~/lib/steps.ios'
 
 type PermissionResponse = Pedometer.PermissionResponse
 
@@ -81,5 +82,13 @@ describe('steps on iOS', () => {
 
     expect(await getStepsSince(start)).toBe(4230)
     expect(Pedometer.getStepCountAsync).toHaveBeenCalledWith(start, expect.any(Date))
+  })
+
+  it('opens the app page of the iOS settings', async () => {
+    const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined)
+
+    await openStepsSettings()
+
+    expect(openSettings).toHaveBeenCalled()
   })
 })

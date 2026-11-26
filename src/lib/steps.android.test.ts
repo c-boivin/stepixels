@@ -4,11 +4,12 @@ import {
   getGrantedPermissions,
   getSdkStatus,
   initialize,
+  openHealthConnectSettings,
   requestPermission,
   SdkAvailabilityStatus,
 } from 'react-native-health-connect'
 
-import { getStepsAccess, getStepsSince, requestStepsAccess } from '~/lib/steps.android'
+import { getStepsAccess, getStepsSince, openStepsSettings, requestStepsAccess } from '~/lib/steps.android'
 
 const READ_STEPS = { accessType: 'read', recordType: 'Steps' } as const
 
@@ -99,5 +100,11 @@ describe('steps on Android', () => {
     jest.mocked(getSdkStatus).mockResolvedValue(SdkAvailabilityStatus.SDK_UNAVAILABLE)
 
     await expect(getStepsSince(new Date())).rejects.toThrow('Health Connect is not available')
+  })
+
+  it('opens the Health Connect settings, where the steps permission lives', async () => {
+    await openStepsSettings()
+
+    expect(openHealthConnectSettings).toHaveBeenCalled()
   })
 })

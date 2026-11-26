@@ -1,4 +1,5 @@
 import { Pedometer } from 'expo-sensors'
+import { Linking } from 'react-native'
 
 // type-only import: removed at build time, so Metro never loads `steps.ts` on iOS
 import type { StepsAccess } from '~/lib/steps'
@@ -27,4 +28,9 @@ export async function getStepsSince(start: Date): Promise<number> {
   // CoreMotion keeps the last 7 days: an older start only returns what is left
   const { steps } = await Pedometer.getStepCountAsync(start, new Date())
   return steps
+}
+
+export async function openStepsSettings(): Promise<void> {
+  // the app's page in the iOS settings, where "Motion & Fitness" can be turned on
+  await Linking.openSettings()
 }
