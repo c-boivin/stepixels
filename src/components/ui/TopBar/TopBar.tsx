@@ -1,12 +1,19 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import Svg, { Path } from 'react-native-svg'
+
+import { Picto } from '~/components/ui/Picto'
 
 import { TYPO, useColors } from '~/styles/theme'
 
-/** The settings gear of the Figma "Barre d'actions" (Icône réglages): cells of 2 × 2 on a 22 × 22 grid. */
-const GEAR_PATH =
-  'M8 0H14V2H8V0ZM2 2H6V4H2V2ZM8 2H14V4H8V2ZM16 2H20V4H16V2ZM2 4H20V6H2V4ZM4 6H8V8H4V6ZM14 6H18V8H14V6ZM0 8H6V14H0V8ZM16 8H22V14H16V8ZM4 14H8V16H4V14ZM14 14H18V16H14V14ZM2 16H20V18H2V16ZM2 18H6V20H2V18ZM8 18H14V20H8V18ZM16 18H20V20H16V18ZM8 20H14V22H8V20Z'
-const GEAR_SIZE = 22
+/** Height of the bar in the design. */
+const BAR_HEIGHT = 42
+/** Touch target of the gear: 44 × 44 around the 22 × 22 picto. */
+const GEAR_TARGET = 44
+/**
+ * The target goes 11 beyond the bar on the right, and 1 above and below (bar 42 high), so that the gear
+ * stays where the design puts it. The bar takes this room itself: on Android, a touch outside the
+ * parent's bounds is lost, and `hitSlop` cannot reach past them.
+ */
+const GEAR_OVERFLOW = (GEAR_TARGET - 22) / 2
 
 export interface TopBarProps {
   /** Text on the left, in upper case: the onboarding step (`1 / 4`) or `← RETOUR`. */
@@ -28,7 +35,7 @@ export function TopBar({ title, accessibilityLabel, onPress, settings }: TopBarP
   const text = <Text style={[TYPO.label11, { color: colors.muted }]}>{title}</Text>
 
   return (
-    <View style={STYLES.bar}>
+    <View style={[STYLES.bar, settings && STYLES.withSettings]}>
       {onPress ? (
         <Pressable
           accessibilityRole="button"
@@ -48,13 +55,9 @@ export function TopBar({ title, accessibilityLabel, onPress, settings }: TopBarP
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={settings.label}
-          // 22 + 2 × 11 = 44: the touch target a finger needs, without moving the gear
-          hitSlop={11}
           onPress={settings.onPress}
-          style={({ pressed }) => pressed && STYLES.pressed}>
-          <Svg width={GEAR_SIZE} height={GEAR_SIZE} viewBox={`0 0 ${GEAR_SIZE} ${GEAR_SIZE}`}>
-            <Path d={GEAR_PATH} fill={colors.text} />
-          </Svg>
+          style={({ pressed }) => [STYLES.gear, pressed && STYLES.pressed]}>
+          <Picto name="settings" color={colors.text} />
         </Pressable>
       )}
     </View>
@@ -64,11 +67,23 @@ export function TopBar({ title, accessibilityLabel, onPress, settings }: TopBarP
 const STYLES = StyleSheet.create({
   pressed: { opacity: 0.75 },
   bar: {
-    height: 42,
+    height: BAR_HEIGHT,
     alignSelf: 'stretch',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  // the bar holds the whole target of the gear, but takes the same room as without it (GEAR_OVERFLOW)
+  withSettings: {
+    height: GEAR_TARGET,
+    marginVertical: -(GEAR_TARGET - BAR_HEIGHT) / 2,
+    marginRight: -GEAR_OVERFLOW,
+  },
+  gear: {
+    width: GEAR_TARGET,
+    height: GEAR_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // 44 high with the hit slop, as a touch target should be
   button: {

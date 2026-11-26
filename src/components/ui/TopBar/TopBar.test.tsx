@@ -17,4 +17,10 @@ describe('TopBar', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Réglages' }))
     expect(onPress).toHaveBeenCalledTimes(1)
   })
+
+  it('gives the gear a 44 × 44 target inside the bar, so that Android receives the whole touch', async () => {
+    await render(<TopBar title="STEPIXELS" settings={{ label: 'Réglages', onPress: jest.fn() }} />)
+
+    expect(screen.getByRole('button', { name: 'Réglages' })).toHaveStyle({ width: 44, height: 44 })
+  })
 })
