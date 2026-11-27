@@ -165,19 +165,21 @@ The dark palette is not in Figma: the team validated it from the light one, the 
 - A session is read from several SecureStore entries: a little slower at launch than one value.
 - The chunk size depends on a limit that iOS does not document: a much bigger session still works (more chunks), but the 2048 bytes figure comes from Expo's warning, not from Apple.
 
-## Tests: Jest and React Native Testing Library, no end-to-end tests
+## Tests: Jest, React Native Testing Library, and Maestro journeys on iOS
 
-**Rule.** Two levels of tests:
+**Rule.** Three levels of tests:
 
 - **Unit tests** with **Jest** (`jest-expo` preset, the one recommended by Expo): pure functions of `src/lib/` and repositories.
 - **Component and screen tests** with **React Native Testing Library**, and `expo-router/testing-library` for routes.
+- **End-to-end journeys** with **Maestro** (course slide 86): `.maestro/sign-in.yaml` signs in, restarts the app, checks that the session is kept, then signs out; `.maestro/sign-up.yaml` creates an account, checks that it is signed in at once, then signs out; `.maestro/sign-out.yaml` checks that cancelling keeps the account, then signs out and restarts the app: nobody is signed in any more. They run on the **iOS simulator, in Expo Go**, with `pnpm start` running, and the sign-in and sign-out use a Supabase test account given with `-e EMAIL=… -e PASSWORD=…` (never committed).
 
 Native modules do not run in Jest, which runs on the computer (Node): `test/setup.ts` replaces them for every test. The local database is a real in-memory SQLite database (`better-sqlite3`) with the same Drizzle migrations as the app; AsyncStorage uses its official Jest mock.
 
-**Why.** The course grades "targeted tests" (Code: 3 points), and the jury will ask what we test. Jest and React Native Testing Library are what the Expo SDK 58 docs recommend. Testing the repositories on a real SQLite database proves that a validation is really saved and read back, not only that a function was called.
+**Why.** The course grades "targeted tests" (Code: 3 points), and the jury will ask what we test. Jest and React Native Testing Library are what the Expo SDK 58 docs recommend. Testing the repositories on a real SQLite database proves that a validation is really saved and read back, not only that a function was called. Maestro is the end-to-end tool of the course (slide 86): the journeys check on the installed app what Jest cannot, the navigation, the real Supabase account and the session kept in SecureStore after a restart.
 
 **Rejected.**
 
+- Maestro on Android with the development build: `clearState` would work there, but one platform was enough within the time left, and iOS in Expo Go is how both of us run the app.
 - A fake database (mock) in the repository tests: no extra dependency, but the test only checks calls, not the SQL or the migrations.
 - Node's built-in SQLite instead of `better-sqlite3`: no extra dependency, but Drizzle 0.45 has no driver for it.
 
@@ -186,7 +188,12 @@ Native modules do not run in Jest, which runs on the computer (Node): `test/setu
 - `better-sqlite3` and `esbuild` (used by `drizzle-kit`) run a script when installed: they are allowed in `pnpm-workspace.yaml` (`allowBuilds`). Any other package asking to run one is refused until the team agrees.
 - `better-sqlite3` is SQLite on the computer, not `expo-sqlite`: a difference between the two is only seen on the phone.
 - No coverage target yet: 80 % on `src/lib/` is set with the business rules tests (OQ-23).
-- **No end-to-end tests.** The course presents a third level (slides 83 and 86): journeys run on the installed app, such as the onboarding then a restart, to check the navigation and the persistence. We know this level is missing. With more time, we would have set it up; within the five days of the project, we chose to spend the time on the unit and screen tests.
+- **Account journeys only, on iOS only.** Maestro runs on simulators, not on a physical iPhone: the journeys do not run on our demo phones. Android (development build) and the other journeys (onboarding, validation) are not covered, for lack of time.
+- The app runs inside Expo Go: the journeys cannot reset the app's data (`clearState`). Each journey starts from a known state (onboarding done, nobody signed in) and leaves it the same way.
+- The simulator is prepared by hand once (listed at the top of `.maestro/sign-in.yaml`): it has no step source, so the onboarding is marked done in Expo Go's storage; Expo Go's tools button and iOS password AutoFill are turned off, as they cover the app's screens.
+- `testID`s are added to the app only for Maestro (the fields of the account forms, the settings button): their label is also used by another element (the field's title, Expo Go's own button).
+- The journeys use the real Supabase project: they fail offline, and a slow network can exceed their waits.
+- Each sign-up run creates a new account (`e2e-<time>@stepixels.test`): the app cannot delete an account yet, so they are deleted by hand in the Supabase dashboard.
 
 ## Step access: a phone with no step source is not supported
 

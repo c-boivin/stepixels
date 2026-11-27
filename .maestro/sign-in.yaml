@@ -1,0 +1,84 @@
+# Sign-in journey (#34) on the iOS simulator, in Expo Go (docs/specs.md, "Tests"):
+# sign in, restart the app (the session is kept), then sign out.
+#
+# Before, on the simulator:
+# - `pnpm start` is running, nobody is signed in;
+# - the onboarding is done: the simulator has no step source, so it cannot be finished there; set
+#   `stepixels.onboarding_done` to "true" in Expo Go's AsyncStorage (RCTAsyncLocalStorage/manifest.json);
+# - Expo Go's "Tools button" is off (Expo Go menu): it sits on the app's settings button;
+# - password AutoFill is off (Settings > General > AutoFill & Passwords): Maestro cannot close its
+#   "Save password?" window, which hides the home screen.
+# After: nobody is signed in again, so the flow can run again.
+#
+# maestro --device <simulator id> test -e EMAIL=<test account> -e PASSWORD=<its password> .maestro/sign-in.yaml
+# Metro on another port than 8081: add -e APP_URL=exp://127.0.0.1:<port>
+
+# the app runs inside Expo Go: Maestro starts and stops Expo Go, and opens the app by its URL
+appId: host.exp.Exponent
+---
+- stopApp
+- openLink: ${APP_URL || 'exp://127.0.0.1:8081'}
+# iOS asks before opening a link in another app, then for the motion access (the steps)
+- tapOn:
+    text: 'Open|Ouvrir'
+    optional: true
+- tapOn:
+    text: 'Allow|Autoriser'
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: 'settings-button'
+    timeout: 60000
+
+# sign in from the settings
+- tapOn:
+    id: 'settings-button'
+- tapOn: 'Se connecter'
+- tapOn:
+    id: 'sign-in-email'
+- inputText: ${EMAIL}
+- tapOn:
+    id: 'sign-in-password'
+- inputText: ${PASSWORD}
+# the button stays above the keyboard (AccountForm)
+- tapOn: 'SE CONNECTER'
+
+# back on the home screen, signed in: the settings show the account
+- extendedWaitUntil:
+    notVisible: 'SE CONNECTER'
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: 'settings-button'
+    timeout: 15000
+- tapOn:
+    id: 'settings-button'
+- assertVisible: 'Compte, .*'
+
+# restart: the session is kept in SecureStore (docs/specs.md, "Session")
+- stopApp
+- openLink: ${APP_URL || 'exp://127.0.0.1:8081'}
+- tapOn:
+    text: 'Open|Ouvrir'
+    optional: true
+- tapOn:
+    text: 'Allow|Autoriser'
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: 'settings-button'
+    timeout: 60000
+- tapOn:
+    id: 'settings-button'
+- assertVisible: 'Compte, .*'
+
+# sign out: the settings offer to sign in again
+- tapOn: 'Se déconnecter'
+- tapOn: 'SE DÉCONNECTER'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-button'
+    timeout: 15000
+- tapOn:
+    id: 'settings-button'
+- assertVisible: 'Se connecter'

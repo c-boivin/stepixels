@@ -95,7 +95,9 @@ export function SignUp({ texts, onSubmit, onSignIn, onBack }: SignUpProps) {
           <Text style={[TYPO.body15, STYLES.center, { color: colors.accentText }]}>{i18n.t('account.sign_up.has_account')}</Text>
         </Pressable>
       }>
+      {/* the labels and the fields share their text (`E-MAIL`): Maestro finds the fields by their testID */}
       <TextField
+        testID="sign-up-first-name"
         label={i18n.t('account.first_name')}
         value={form.firstName}
         onChangeText={(value) => onChange('firstName', value)}
@@ -107,6 +109,7 @@ export function SignUp({ texts, onSubmit, onSignIn, onBack }: SignUpProps) {
       />
       <TextField
         ref={emailField}
+        testID="sign-up-email"
         label={i18n.t('account.email')}
         value={form.email}
         onChangeText={(value) => onChange('email', value)}
@@ -120,6 +123,7 @@ export function SignUp({ texts, onSubmit, onSignIn, onBack }: SignUpProps) {
       />
       <TextField
         ref={passwordField}
+        testID="sign-up-password"
         label={i18n.t('account.password')}
         value={form.password}
         onChangeText={(value) => onChange('password', value)}
