@@ -8,7 +8,8 @@
     "scheme": "stepixels",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.stepixels.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -54,6 +55,12 @@
         }
       ],
       "react-native-health-connect",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "stepixels lit tes pas pour révéler les images."
+        }
+      ],
       "expo-secure-store"
     ],
     "experiments": {
