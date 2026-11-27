@@ -2,7 +2,7 @@
 
 Summary of the teacher's course slides "ECV Mobile APP" (slide numbers in brackets).
 The slides are the reference: if this summary and the slides disagree, the slides win.
-For our own decisions, see `docs/adr/`. For code conventions, see `docs/conventions.md`.
+For our own decisions, see `docs/adr/` and `docs/specs.md`.
 
 - [Part 1 — Project brief](#part-1--project-brief): requirements, schedule, grading, presentation.
 - [Part 2 — Technical guide](#part-2--technical-guide): React, React Native, navigation, HTTP, architecture, persistence, security, offline mode, native APIs, permissions, sensors.
@@ -79,7 +79,7 @@ One ADR per important decision: context and constraints, decision and alternativ
 
 - Example repository: https://github.com/bastienrobert/ticketing (monorepo: `apps/mobile` is the Expo app, `apps/server` the events API, `docs/adr/` the ADRs). The teacher updates it during the week; see "Teacher's example repository" in `CLAUDE.md`.
   - **Last reviewed commit**: `d621601` (2026-11-18, "feat(mobile): add calendar event after purchase"), reviewed on 2026-11-25; checked again on 2026-11-27: no new commit. Since `4356dca`: switch to a development build (`expo run:ios` / `expo run:android`), mocked Apple Pay from a local native module loaded with `requireOptionalNativeModule`, and adding the event to the calendar with the permission flow of slides 76–77 (`lib/calendar.ts`, native permission texts in `src/data/messages/native/fr.json` through `locales` in `app.json`).
-- Exercise 1 correction (React web catalogue) and exercise 2 correction (React Native carousel): source of `docs/conventions.md`.
+- Exercise 1 correction (React web catalogue) and exercise 2 correction (React Native carousel): source of our first code conventions.
 
 ### Not yet covered
 

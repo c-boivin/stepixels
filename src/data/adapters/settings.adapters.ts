@@ -13,7 +13,7 @@ export interface SettingsRaw {
 
 /**
  * The settings, ready to display: the pedometer access in words, and what its row does
- * (docs/conventions.md, permissions): ask again when the phone still can, otherwise open its settings.
+ * (course slides 76–79, permissions): ask again when the phone still can, otherwise open its settings.
  */
 export function settingsAdapter({ access, resetTime, email }: SettingsRaw): SettingsParams {
   const granted = access === 'granted'

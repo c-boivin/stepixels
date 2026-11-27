@@ -1,7 +1,7 @@
 # Technical specs
 
 How we build the app: technical choices that are not major enough for an ADR (see [`docs/adr/README.md`](adr/README.md)).
-Each section gives the rule, why we chose it, what we rejected and its limits. The detailed code rules are in [`docs/conventions.md`](conventions.md).
+Each section gives the rule, why we chose it, what we rejected and its limits. The app's structure is in [ADR-002](adr/ADR-002-app-architecture.md).
 
 A spec can change when the team agrees: update the section in a pull request and explain why in its description.
 
@@ -148,6 +148,22 @@ The dark palette is not in Figma: the team validated it from the light one, the 
 **Limits.**
 
 - A column change on one side still needs the same change on the other side (see "Database schema" above), `user_id` and `synced` apart.
+
+## Session: stored in SecureStore, in chunks
+
+**Rule.** The Supabase session is stored in **SecureStore** only (ADR-003), through `secureSessionStorage` (`src/lib/secure-session-storage.ts`), the `storage` given to the Supabase client. A value is cut into **chunks of 500 characters**, one SecureStore entry each, plus one entry that holds the number of chunks, written last. Operations on one key run one after the other.
+
+**Why.** Some iOS versions refuse SecureStore values above about 2048 bytes, and a Supabase session is often larger (ADR-003 left it to the sign-up pull request). A character takes up to 4 bytes, so 500 characters always fit. The number of chunks is written last: a write cut halfway (app killed) reads as "no session" instead of a broken one. Supabase can read and write the session at the same time (token refresh during a sign-in): running the operations one after the other keeps chunks of two sessions from mixing.
+
+**Rejected.**
+
+- The session in AsyncStorage, as in Supabase's quick start: no size limit, but not encrypted (course slides 68–69).
+- Encrypting the session with a key kept in SecureStore, the session itself in AsyncStorage (Supabase's "LargeSecureStore" example): it needs one more crypto library for the same result.
+
+**Limits.**
+
+- A session is read from several SecureStore entries: a little slower at launch than one value.
+- The chunk size depends on a limit that iOS does not document: a much bigger session still works (more chunks), but the 2048 bytes figure comes from Expo's warning, not from Apple.
 
 ## Tests: Jest and React Native Testing Library, no end-to-end tests
 
