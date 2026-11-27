@@ -149,13 +149,12 @@ The dark palette is not in Figma: the team validated it from the light one, the 
 
 - A column change on one side still needs the same change on the other side (see "Database schema" above), `user_id` and `synced` apart.
 
-## Tests: Jest and React Native Testing Library, Maestro later
+## Tests: Jest and React Native Testing Library, no end-to-end tests
 
-**Rule.** Three levels of tests:
+**Rule.** Two levels of tests:
 
 - **Unit tests** with **Jest** (`jest-expo` preset, the one recommended by Expo): pure functions of `src/lib/` and repositories.
 - **Component and screen tests** with **React Native Testing Library**, and `expo-router/testing-library` for routes.
-- **End-to-end tests** with **Maestro**, on a phone: not set up yet, added in their own pull request once the first screens exist.
 
 Native modules do not run in Jest, which runs on the computer (Node): `test/setup.ts` replaces them for every test. The local database is a real in-memory SQLite database (`better-sqlite3`) with the same Drizzle migrations as the app; AsyncStorage uses its official Jest mock.
 
@@ -171,6 +170,7 @@ Native modules do not run in Jest, which runs on the computer (Node): `test/setu
 - `better-sqlite3` and `esbuild` (used by `drizzle-kit`) run a script when installed: they are allowed in `pnpm-workspace.yaml` (`allowBuilds`). Any other package asking to run one is refused until the team agrees.
 - `better-sqlite3` is SQLite on the computer, not `expo-sqlite`: a difference between the two is only seen on the phone.
 - No coverage target yet: 80 % on `src/lib/` is set with the business rules tests (OQ-23).
+- **No end-to-end tests.** The course presents a third level (slides 83 and 86): journeys run on the installed app, such as the onboarding then a restart, to check the navigation and the persistence. We know this level is missing. With more time, we would have set it up; within the five days of the project, we chose to spend the time on the unit and screen tests.
 
 ## Step access: a phone with no step source is not supported
 
