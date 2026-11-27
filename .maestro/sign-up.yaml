@@ -1,0 +1,61 @@
+# Sign-up journey (#33) on the iOS simulator, in Expo Go (docs/specs.md, "Tests"):
+# create an account, check it is signed in at once, then sign out.
+#
+# Before: the same simulator setup as sign-in.yaml.
+# After: nobody is signed in again. Each run creates a new Supabase account (`e2e-<time>@stepixels.test`).
+#
+# maestro --device <simulator id> test .maestro/sign-up.yaml
+# Metro on another port than 8081: add -e APP_URL=exp://127.0.0.1:<port>
+
+# the app runs inside Expo Go: Maestro starts and stops Expo Go, and opens the app by its URL
+appId: host.exp.Exponent
+---
+# a new e-mail at each run: an e-mail can only have one account
+- evalScript: ${output.email = 'e2e-' + Date.now() + '@stepixels.test'}
+
+- stopApp
+- openLink: ${APP_URL || 'exp://127.0.0.1:8081'}
+# iOS asks before opening a link in another app, then for the motion access (the steps)
+- tapOn:
+    text: 'Open|Ouvrir'
+    optional: true
+- tapOn:
+    text: 'Allow|Autoriser'
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: 'settings-button'
+    timeout: 60000
+
+# sign up from the settings
+- tapOn:
+    id: 'settings-button'
+- tapOn: 'Créer un compte'
+- tapOn:
+    id: 'sign-up-first-name'
+- inputText: 'Maestro'
+- tapOn:
+    id: 'sign-up-email'
+- inputText: ${output.email}
+- tapOn:
+    id: 'sign-up-password'
+- inputText: 'motdepasse-e2e'
+- tapOn: 'J.accepte les conditions.*'
+# the button stays above the keyboard (AccountForm)
+- tapOn: 'CRÉER MON COMPTE'
+
+# back on the settings, signed in at once: they show the new account
+- extendedWaitUntil:
+    visible: 'Compte, ${output.email}'
+    timeout: 15000
+
+# sign out: the settings offer to sign in again
+- tapOn: 'Se déconnecter'
+- tapOn: 'SE DÉCONNECTER'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-button'
+    timeout: 15000
+- tapOn:
+    id: 'settings-button'
+- assertVisible: 'Se connecter'
