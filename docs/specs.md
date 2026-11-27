@@ -171,7 +171,7 @@ The dark palette is not in Figma: the team validated it from the light one, the 
 
 - **Unit tests** with **Jest** (`jest-expo` preset, the one recommended by Expo): pure functions of `src/lib/` and repositories.
 - **Component and screen tests** with **React Native Testing Library**, and `expo-router/testing-library` for routes.
-- **End-to-end journeys** with **Maestro** (course slide 86): `.maestro/sign-in.yaml` signs in, restarts the app, checks that the session is kept, then signs out; `.maestro/sign-up.yaml` creates an account, checks that it is signed in at once, then signs out. They run on the **iOS simulator, in Expo Go**, with `pnpm start` running, and the sign-in uses a Supabase test account given with `-e EMAIL=… -e PASSWORD=…` (never committed).
+- **End-to-end journeys** with **Maestro** (course slide 86): `.maestro/sign-in.yaml` signs in, restarts the app, checks that the session is kept, then signs out; `.maestro/sign-up.yaml` creates an account, checks that it is signed in at once, then signs out; `.maestro/sign-out.yaml` checks that cancelling keeps the account, then signs out and restarts the app: nobody is signed in any more. They run on the **iOS simulator, in Expo Go**, with `pnpm start` running, and the sign-in and sign-out use a Supabase test account given with `-e EMAIL=… -e PASSWORD=…` (never committed).
 
 Native modules do not run in Jest, which runs on the computer (Node): `test/setup.ts` replaces them for every test. The local database is a real in-memory SQLite database (`better-sqlite3`) with the same Drizzle migrations as the app; AsyncStorage uses its official Jest mock.
 
