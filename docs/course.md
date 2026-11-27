@@ -78,12 +78,12 @@ One ADR per important decision: context and constraints, decision and alternativ
 ### Teacher's references
 
 - Example repository: https://github.com/bastienrobert/ticketing (monorepo: `apps/mobile` is the Expo app, `apps/server` the events API, `docs/adr/` the ADRs). The teacher updates it during the week; see "Teacher's example repository" in `CLAUDE.md`.
-  - **Last reviewed commit**: `d621601` (2026-11-18, "feat(mobile): add calendar event after purchase"), reviewed on 2026-11-25. Since `4356dca`: switch to a development build (`expo run:ios` / `expo run:android`), mocked Apple Pay from a local native module loaded with `requireOptionalNativeModule`, and adding the event to the calendar with the permission flow of slides 76–77 (`lib/calendar.ts`, native permission texts in `src/data/messages/native/fr.json` through `locales` in `app.json`).
+  - **Last reviewed commit**: `d621601` (2026-11-18, "feat(mobile): add calendar event after purchase"), reviewed on 2026-11-25; checked again on 2026-11-27: no new commit. Since `4356dca`: switch to a development build (`expo run:ios` / `expo run:android`), mocked Apple Pay from a local native module loaded with `requireOptionalNativeModule`, and adding the event to the calendar with the permission flow of slides 76–77 (`lib/calendar.ts`, native permission texts in `src/data/messages/native/fr.json` through `locales` in `app.json`).
 - Exercise 1 correction (React web catalogue) and exercise 2 correction (React Native carousel): source of `docs/conventions.md`.
 
 ### Not yet covered
 
-Slides 82–94 (tests, quality, distribution, final delivery) are not summarized yet. Add them here when the course is given.
+Slides 92–94 (final delivery) are not summarized yet: the Thursday PDF stops at slide 91. Add them here when they are shared.
 
 ## Part 2 — Technical guide
 
@@ -396,3 +396,108 @@ useEffect(() => {
   return () => subscription.remove()
 }, [isSensorEnabled])
 ```
+
+### Delivery: tests [82–86]
+
+The question of the part: how to test, measure and ship a reliable app? [82]
+
+**Three levels of tests** [83], from the base of the pyramid to the top:
+
+| Level | Tool | What it checks |
+| --- | --- | --- |
+| Unit | Jest | Business rules, pure functions: inputs and outputs |
+| Components | React Native Testing Library | UI behavior: a press and its result, found by roles and labels |
+| End-to-end (E2E) journey | Maestro | The installed app: navigation and persistence |
+
+**Unit test** [84]: one defined input, one expected result. The example also checks that the input is not mutated.
+
+```ts
+it('ajoute un favori sans mutation', () => {
+  const favorites = [12]
+  const result = toggleFavorite(favorites, 42)
+
+  expect(result).toEqual([12, 42])
+  expect(favorites).toEqual([12])
+})
+```
+
+**Component test** [85]: mock an action, trigger an event, check the linked action. The button is found by its role and accessible name, as a screen reader would.
+
+```tsx
+it('déclenche le favori', async () => {
+  const user = userEvent.setup()
+  const onToggle = jest.fn()
+
+  await render(<FavoriteButton eventId={42} isFavorite={false} onToggle={onToggle} />)
+  const button = screen.getByRole('button', { name: 'Ajouter aux favoris' })
+
+  await user.press(button)
+  expect(onToggle).toHaveBeenCalledTimes(1)
+})
+```
+
+**Maestro** [86]: test a journey, a sequence of events that imitates a user, on the installed app. The example checks that a favorite survives a restart (persistence):
+
+```yaml
+appId: 'com.example.ticketing'
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: 'favorite-42'
+- tapOn: 'Favoris'
+- assertVisible: 'Événement démo'
+- stopApp
+- launchApp
+- tapOn: 'Favoris'
+- assertVisible: 'Événement démo'
+```
+
+### Delivery: quality [87–89]
+
+**Measure before optimizing** [87]:
+
+| Tool | Measures |
+| --- | --- |
+| React Native DevTools | React profiler: renders and their duration |
+| Xcode Instruments | CPU time, memory and energy on iOS |
+| Android Studio Profiler | CPU, memory and rendering on Android |
+| EAS Observe | Startup and renders in production |
+
+**Renders and resources** [88]: one targeted fix, then one measure to validate it.
+
+- Lists: `FlatList` and stable keys, simple rows.
+- Renders: state at the right level, `memo` only if the gain is measured.
+- Images: suitable dimensions, thumbnails in lists.
+- Resources: subscriptions cleaned up, limited JS work.
+- List trade-off: a bigger render window uses more memory; a smaller one risks blank areas while scrolling.
+
+**Accessible action** [89]: a role and a state, one named action, working with VoiceOver and TalkBack. The `testID` is what Maestro taps (`id: 'favorite-42'`).
+
+```tsx
+<Pressable
+  testID={`favorite-${eventId}`}
+  accessibilityRole='button'
+  accessibilityLabel={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+  accessibilityState={{ selected: isFavorite }}
+  onPress={onToggle}>
+  <Text>{isFavorite ? '★' : '☆'}</Text>
+</Pressable>
+```
+
+### Delivery: distribution [90–91]
+
+**Build and distribute** [90]:
+
+- `expo prebuild`: generates `ios/` and `android/`, with the native config applied.
+- EAS Build: compiles the binary and signs the app.
+- EAS Submit: sends the binary to the App Store or Google Play.
+- Distribution: TestFlight or a Play test track, then release and store review.
+- Before submitting: identifier, signature and versions consistent; screenshots, privacy details and store listing ready.
+
+**Compatibility with the installed runtime** [91]:
+
+| | EAS Update | EAS Build |
+| --- | --- | --- |
+| When | Only JS code and assets changed, still compatible | A native module or the native configuration changed |
+| Needs | A compatible `runtimeVersion`, the binary already installed, the update tested | Compile and sign, install the new binary, the right distribution |
