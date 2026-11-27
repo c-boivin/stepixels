@@ -16,6 +16,7 @@ React Native app built for the ECV M2 mobile course, by a team of two.
 | Several screens in a coherent flow | Onboarding → home → settings → account screens (Expo Router) |
 | Remote or simulated data | Supabase (accounts, progress backup, community total) and local JSON images |
 | Hardware feature | Step counter: CoreMotion on iOS, Health Connect on Android ([ADR-005](docs/adr/ADR-005-step-source.md)) |
+| Other native interaction | Light and dark themes following the phone's system setting, live, with the keyboard, alerts and status bar ([specs](docs/specs.md)) |
 | Local persistence | SQLite + Drizzle for the validations, AsyncStorage for preferences, SecureStore for the session ([ADR-004](docs/adr/ADR-004-local-storage.md)) |
 | Handled errors | Loading, error and offline states on every screen |
 | Targeted tests | Jest and React Native Testing Library ([specs](docs/specs.md)) |

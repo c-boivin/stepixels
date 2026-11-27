@@ -1,7 +1,7 @@
 # Technical specs
 
 How we build the app: technical choices that are not major enough for an ADR (see [`docs/adr/README.md`](adr/README.md)).
-Each section gives the rule, why we chose it, what we rejected and its limits. The app's structure is in [ADR-002](adr/ADR-002-app-architecture.md).
+Each section gives the rule, why we chose it, what we rejected and its limits. The app's structure is in [ADR-006](adr/ADR-006-app-architecture-update.md).
 
 A spec can change when the team agrees: update the section in a pull request and explain why in its description.
 
