@@ -52,7 +52,9 @@ export function TopBar({ title, accessibilityLabel, onPress, settings }: TopBarP
       )}
 
       {settings && (
+        // Expo Go's own button is also read `Réglages`: Maestro finds this one by its testID
         <Pressable
+          testID="settings-button"
           accessibilityRole="button"
           accessibilityLabel={settings.label}
           onPress={settings.onPress}

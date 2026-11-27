@@ -78,7 +78,9 @@ export function SignIn({ onSubmit, onSignUp, onBack }: SignInProps) {
           </Pressable>
         </View>
       }>
+      {/* the label and the field share the text `E-MAIL`: Maestro finds the field by its testID */}
       <TextField
+        testID="sign-in-email"
         label={i18n.t('account.email')}
         value={form.email}
         onChangeText={(value) => onChange('email', value)}
@@ -91,6 +93,7 @@ export function SignIn({ onSubmit, onSignUp, onBack }: SignInProps) {
       />
       <TextField
         ref={passwordField}
+        testID="sign-in-password"
         label={i18n.t('account.password')}
         value={form.password}
         onChangeText={(value) => onChange('password', value)}

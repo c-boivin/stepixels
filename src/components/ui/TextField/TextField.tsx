@@ -9,7 +9,7 @@ import { TYPO, useColors } from '~/styles/theme'
 export interface TextFieldProps
   extends Pick<
     TextInputProps,
-    'autoCapitalize' | 'autoComplete' | 'keyboardType' | 'onBlur' | 'onSubmitEditing' | 'returnKeyType' | 'secureTextEntry' | 'textContentType'
+    'autoCapitalize' | 'autoComplete' | 'keyboardType' | 'onBlur' | 'onSubmitEditing' | 'returnKeyType' | 'secureTextEntry' | 'testID' | 'textContentType'
   > {
   /** Label above the field, in upper case (`E-MAIL`): also its accessibility label. */
   label: string
