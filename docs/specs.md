@@ -1,7 +1,7 @@
 # Technical specs
 
 How we build the app: technical choices that are not major enough for an ADR (see [`docs/adr/README.md`](adr/README.md)).
-Each section gives the rule, why we chose it, what we rejected and its limits. The detailed code rules are in [`docs/conventions.md`](conventions.md).
+Each section gives the rule, why we chose it, what we rejected and its limits. The app's structure is in [ADR-006](adr/ADR-006-app-architecture-update.md).
 
 A spec can change when the team agrees: update the section in a pull request and explain why in its description.
 
@@ -149,13 +149,28 @@ The dark palette is not in Figma: the team validated it from the light one, the 
 
 - A column change on one side still needs the same change on the other side (see "Database schema" above), `user_id` and `synced` apart.
 
-## Tests: Jest and React Native Testing Library, Maestro later
+## Session: stored in SecureStore, in chunks
 
-**Rule.** Three levels of tests:
+**Rule.** The Supabase session is stored in **SecureStore** only (ADR-003), through `secureSessionStorage` (`src/lib/secure-session-storage.ts`), the `storage` given to the Supabase client. A value is cut into **chunks of 500 characters**, one SecureStore entry each, plus one entry that holds the number of chunks, written last. Operations on one key run one after the other.
+
+**Why.** Some iOS versions refuse SecureStore values above about 2048 bytes, and a Supabase session is often larger (ADR-003 left it to the sign-up pull request). A character takes up to 4 bytes, so 500 characters always fit. The number of chunks is written last: a write cut halfway (app killed) reads as "no session" instead of a broken one. Supabase can read and write the session at the same time (token refresh during a sign-in): running the operations one after the other keeps chunks of two sessions from mixing.
+
+**Rejected.**
+
+- The session in AsyncStorage, as in Supabase's quick start: no size limit, but not encrypted (course slides 68–69).
+- Encrypting the session with a key kept in SecureStore, the session itself in AsyncStorage (Supabase's "LargeSecureStore" example): it needs one more crypto library for the same result.
+
+**Limits.**
+
+- A session is read from several SecureStore entries: a little slower at launch than one value.
+- The chunk size depends on a limit that iOS does not document: a much bigger session still works (more chunks), but the 2048 bytes figure comes from Expo's warning, not from Apple.
+
+## Tests: Jest and React Native Testing Library, no end-to-end tests
+
+**Rule.** Two levels of tests:
 
 - **Unit tests** with **Jest** (`jest-expo` preset, the one recommended by Expo): pure functions of `src/lib/` and repositories.
 - **Component and screen tests** with **React Native Testing Library**, and `expo-router/testing-library` for routes.
-- **End-to-end tests** with **Maestro**, on a phone: not set up yet, added in their own pull request once the first screens exist.
 
 Native modules do not run in Jest, which runs on the computer (Node): `test/setup.ts` replaces them for every test. The local database is a real in-memory SQLite database (`better-sqlite3`) with the same Drizzle migrations as the app; AsyncStorage uses its official Jest mock.
 
@@ -171,6 +186,7 @@ Native modules do not run in Jest, which runs on the computer (Node): `test/setu
 - `better-sqlite3` and `esbuild` (used by `drizzle-kit`) run a script when installed: they are allowed in `pnpm-workspace.yaml` (`allowBuilds`). Any other package asking to run one is refused until the team agrees.
 - `better-sqlite3` is SQLite on the computer, not `expo-sqlite`: a difference between the two is only seen on the phone.
 - No coverage target yet: 80 % on `src/lib/` is set with the business rules tests (OQ-23).
+- **No end-to-end tests.** The course presents a third level (slides 83 and 86): journeys run on the installed app, such as the onboarding then a restart, to check the navigation and the persistence. We know this level is missing. With more time, we would have set it up; within the five days of the project, we chose to spend the time on the unit and screen tests.
 
 ## Step access: a phone with no step source is not supported
 

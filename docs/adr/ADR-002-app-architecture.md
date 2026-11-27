@@ -1,6 +1,6 @@
 # ADR-002 · How do we structure the app?
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR-006
 - **Date**: 2026-11-24
 - **Authors**: stepixels team
 

@@ -6,7 +6,7 @@ import { Linking } from 'react-native'
 // TypeScript reads this file, so the platform files must keep the same exports and signatures.
 
 /**
- * Access to the phone's steps, for the screens to switch on (`docs/conventions.md`):
+ * Access to the phone's steps, for the screens to switch on (course slides 76–79):
  * - `undetermined`: never asked yet, explain the benefit then call `requestStepsAccess()`;
  * - `granted`: the steps can be read;
  * - `refused`: just declined, the system can still ask again;

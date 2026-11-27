@@ -224,7 +224,7 @@ export function Home({
             // unlocking needs no steps: shown even without the steps access
             <Button label={i18n.t('home.unlock.button')} value={i18n.t('home.unlock.value')} onPress={() => onUnlock(unlock)} />
           ) : stepsAccess === 'blocked' ? (
-            // only the settings can allow it (docs/conventions.md): coming back reads the steps again
+            // only the settings can allow it (course slides 76–79): coming back reads the steps again
             <Button
               label={i18n.t('home.steps_access.settings_button')}
               value={i18n.t('home.steps_access.button_value')}
